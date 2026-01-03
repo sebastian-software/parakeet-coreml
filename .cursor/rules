@@ -109,5 +109,6 @@
 
 ## API Overview
 
-- `transcribe()`: Short audio ≤15s
-- `transcribeLong()`: Any length with VAD segmentation (requires `enableVad: true`)
+- `transcribe()`: Unified API for audio of any length
+  - Short audio (≤15s): Direct transcription
+  - Long audio (>15s): Automatic VAD segmentation

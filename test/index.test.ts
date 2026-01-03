@@ -67,10 +67,10 @@ describe("index", () => {
       expect(() => engine.cleanup()).not.toThrow()
     })
 
-    it("transcribe throws before initialization", () => {
+    it("transcribe rejects before initialization", async () => {
       const engine = new ParakeetAsrEngine()
       const samples = new Float32Array(16000)
-      expect(() => engine.transcribe(samples)).toThrow("not initialized")
+      await expect(engine.transcribe(samples)).rejects.toThrow("not initialized")
     })
 
     // Platform-specific tests

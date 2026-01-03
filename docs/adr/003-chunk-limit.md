@@ -58,22 +58,21 @@ for (let i = 0; i < samples.length; i += CHUNK_SIZE - OVERLAP) {
 }
 ```
 
-## Update: VAD-based Solution (ADR-005)
+## Update: Transparent VAD Integration (ADR-005)
 
-This limitation has been addressed with the addition of VAD-based segmentation. See [ADR-005: VAD-based Segmentation for Long Audio](005-vad-segmentation.md).
+This limitation is now transparent to users. See [ADR-005: VAD-based Segmentation for Long Audio](005-vad-segmentation.md).
 
-Users can now use `transcribeLong()` with `enableVad: true` to transcribe audio of any length:
+The unified `transcribe()` API automatically handles any audio length:
 
 ```typescript
-const engine = new ParakeetAsrEngine({ enableVad: true })
+const engine = new ParakeetAsrEngine()
 await engine.initialize()
 
-const result = engine.transcribeLong(longAudioSamples)
-// Automatically segments at speech boundaries
+// Works for ANY length - VAD is used automatically when needed
+const result = await engine.transcribe(audioSamples)
 ```
 
-The 15-second limit remains for the low-level `transcribe()` API, which is still useful for:
+- **Short audio (≤15s)**: Direct transcription, no VAD overhead
+- **Long audio (>15s)**: VAD model loaded on-demand, automatic segmentation
 
-- Short audio that doesn't need segmentation
-- Custom chunking strategies
-- Lower latency (no VAD overhead)
+The 15-second limit is purely an implementation detail that users never need to think about.

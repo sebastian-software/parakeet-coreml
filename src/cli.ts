@@ -20,11 +20,14 @@ function printHelp(): void {
 parakeet-coreml CLI
 
 Commands:
-  download [--force]      Download Parakeet ASR models from Hugging Face
-  download-vad [--force]  Download Silero VAD model for long audio transcription
-  download-all [--force]  Download both ASR and VAD models
-  status                  Check if models are downloaded
-  path                    Print the default model directory paths
+  download [--force]      Download ASR models (~1.5GB)
+  download-vad [--force]  Download VAD model (~1MB, for long audio)
+  download-all [--force]  Download all models
+  status                  Check model status
+  path                    Print model directory paths
+
+Note: Models are auto-downloaded on first use. Pre-download for
+faster cold starts or offline environments.
 
 Options:
   --force                 Force re-download even if models exist

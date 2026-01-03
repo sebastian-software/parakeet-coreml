@@ -83,14 +83,6 @@ function getAddon(): NativeAddon {
 }
 
 /**
- * Transcription result
- */
-export interface TranscriptionResult {
-  text: string
-  durationMs: number
-}
-
-/**
  * Speech segment with transcription
  */
 export interface TranscribedSegment {
@@ -100,32 +92,46 @@ export interface TranscribedSegment {
 }
 
 /**
- * Long audio transcription result
+ * Transcription result
  */
-export interface LongTranscriptionResult {
+export interface TranscriptionResult {
   text: string
-  segments: TranscribedSegment[]
   durationMs: number
+
+  /**
+   * Speech segments with timestamps.
+   * Only present for long audio (>15s) that was automatically segmented.
+   */
+  segments?: TranscribedSegment[]
 }
 
 /**
- * VAD options for speech detection
+ * Transcription options
  */
-export interface VadOptions {
+export interface TranscribeOptions {
   /**
-   * Speech probability threshold (0-1)
-   * @default 0.5
+   * Sample rate of the audio.
+   * @default 16000
    */
-  threshold?: number
+  sampleRate?: number
 
   /**
-   * Minimum silence duration to split segments (ms)
+   * Speech probability threshold for VAD (0-1).
+   * Only used for long audio.
+   * @default 0.5
+   */
+  vadThreshold?: number
+
+  /**
+   * Minimum silence duration to split segments (ms).
+   * Only used for long audio.
    * @default 300
    */
   minSilenceDurationMs?: number
 
   /**
-   * Minimum speech duration to keep (ms)
+   * Minimum speech duration to keep (ms).
+   * Only used for long audio.
    * @default 250
    */
   minSpeechDurationMs?: number
@@ -136,14 +142,14 @@ export interface VadOptions {
  */
 export interface AsrEngineOptions {
   /**
-   * Path to the model directory.
-   * If not provided, uses the default cache directory (~/.cache/parakeet-coreml/models).
+   * Path to the ASR model directory.
+   * @default ~/.cache/parakeet-coreml/models
    */
   modelDir?: string
 
   /**
    * Path to the VAD model directory.
-   * If not provided, uses the default cache directory (~/.cache/parakeet-coreml/vad).
+   * @default ~/.cache/parakeet-coreml/vad
    */
   vadDir?: string
 
@@ -152,22 +158,24 @@ export interface AsrEngineOptions {
    * @default true
    */
   autoDownload?: boolean
-
-  /**
-   * Enable VAD for long audio transcription.
-   * @default false
-   */
-  enableVad?: boolean
 }
 
 /**
- * Parakeet ASR Engine with CoreML/ANE acceleration
+ * Maximum audio duration for a single transcription chunk (in samples at 16kHz)
+ */
+const MAX_CHUNK_SAMPLES = 15 * 16000
+
+/**
+ * Parakeet ASR Engine with CoreML/ANE acceleration.
+ *
+ * Supports audio of any length. For audio longer than 15 seconds,
+ * Voice Activity Detection (VAD) is automatically used to segment
+ * the audio at natural speech boundaries.
  */
 export class ParakeetAsrEngine {
   private readonly modelDir: string
   private readonly vadDir: string
   private readonly autoDownload: boolean
-  private readonly enableVad: boolean
   private initialized = false
   private vadInitialized = false
 
@@ -175,7 +183,6 @@ export class ParakeetAsrEngine {
     this.modelDir = options.modelDir ? resolve(options.modelDir) : getDefaultModelDir()
     this.vadDir = options.vadDir ? resolve(options.vadDir) : getDefaultVadDir()
     this.autoDownload = options.autoDownload ?? true
-    this.enableVad = options.enableVad ?? false
   }
 
   /**
@@ -245,25 +252,20 @@ export class ParakeetAsrEngine {
 
     this.initialized = true
 
-    // Initialize VAD if enabled
-    if (this.enableVad) {
-      await this.initializeVad()
-    }
-
     /* v8 ignore stop */
   }
 
   /**
-   * Initialize VAD engine for long audio transcription.
-   * Called automatically if enableVad is true.
+   * Initialize VAD engine (called automatically when needed for long audio).
    */
-  async initializeVad(): Promise<void> {
+  private async ensureVadInitialized(): Promise<void> {
     if (this.vadInitialized) {
       return
     }
 
     // Download VAD model if needed
     if (!isVadModelDownloaded(this.vadDir)) {
+      /* v8 ignore start - auto-download path */
       if (this.autoDownload) {
         console.log("VAD model not found. Downloading...")
         await downloadVadModel({ vadDir: this.vadDir })
@@ -273,12 +275,17 @@ export class ParakeetAsrEngine {
             `Run "npx parakeet-coreml download-vad" or enable autoDownload.`
         )
       }
+
+      /* v8 ignore stop */
     }
 
+    /* v8 ignore start - native addon call */
     const success = getAddon().initializeVad(this.vadDir)
     if (!success) {
       throw new Error("Failed to initialize VAD engine")
     }
+
+    /* v8 ignore stop */
 
     this.vadInitialized = true
   }
@@ -290,63 +297,41 @@ export class ParakeetAsrEngine {
     return getAddon().isInitialized()
   }
 
-  isVadReady(): boolean {
-    if (!this.vadInitialized) {
-      return false
-    }
-    return getAddon().isVadInitialized()
-  }
-
   /* v8 ignore start - native addon calls, tested via E2E */
-  transcribe(samples: Float32Array, sampleRate = 16000): TranscriptionResult {
-    if (!this.initialized) {
-      throw new Error("ASR engine not initialized. Call initialize() first.")
-    }
-
-    const startTime = performance.now()
-    const text = getAddon().transcribe(samples, sampleRate)
-    const durationMs = performance.now() - startTime
-
-    return { text, durationMs }
-  }
-
-  transcribeFile(filePath: string): TranscriptionResult {
-    if (!this.initialized) {
-      throw new Error("ASR engine not initialized. Call initialize() first.")
-    }
-
-    const startTime = performance.now()
-    const text = getAddon().transcribeFile(resolve(filePath))
-    const durationMs = performance.now() - startTime
-
-    return { text, durationMs }
-  }
 
   /**
-   * Transcribe long audio using VAD-based chunking.
-   * Automatically splits audio at speech boundaries and transcribes each segment.
+   * Transcribe audio of any length.
+   *
+   * For short audio (≤15s), transcription is immediate.
+   * For long audio (>15s), VAD automatically segments at speech boundaries.
    *
    * @param samples Audio samples (16kHz, mono, Float32Array)
-   * @param options VAD options for speech detection
-   * @returns Transcription with segments
+   * @param options Transcription options
+   * @returns Transcription result (with segments for long audio)
    */
-  transcribeLong(samples: Float32Array, options: VadOptions = {}): LongTranscriptionResult {
+  async transcribe(
+    samples: Float32Array,
+    options: TranscribeOptions = {}
+  ): Promise<TranscriptionResult> {
     if (!this.initialized) {
       throw new Error("ASR engine not initialized. Call initialize() first.")
     }
-    if (!this.vadInitialized) {
-      throw new Error(
-        "VAD engine not initialized. Call initializeVad() first or set enableVad: true."
-      )
+
+    const sampleRate = options.sampleRate ?? 16000
+    const startTime = performance.now()
+
+    // Short audio: direct transcription
+    if (samples.length <= MAX_CHUNK_SAMPLES) {
+      const text = getAddon().transcribe(samples, sampleRate)
+      const durationMs = performance.now() - startTime
+      return { text, durationMs }
     }
 
-    const startTime = performance.now()
-    const sampleRate = 16000
-    const maxChunkSamples = 15 * sampleRate // 15 seconds max
+    // Long audio: use VAD for intelligent segmentation
+    await this.ensureVadInitialized()
 
-    // Detect speech segments using VAD
     const speechSegments = getAddon().detectSpeechSegments(samples, {
-      threshold: options.threshold ?? 0.5,
+      threshold: options.vadThreshold ?? 0.5,
       minSilenceDurationMs: options.minSilenceDurationMs ?? 300,
       minSpeechDurationMs: options.minSpeechDurationMs ?? 250
     })
@@ -360,10 +345,10 @@ export class ParakeetAsrEngine {
       const segmentSamples = samples.slice(startSample, endSample)
 
       // If segment is longer than 15s, split into chunks
-      if (segmentSamples.length > maxChunkSamples) {
+      if (segmentSamples.length > MAX_CHUNK_SAMPLES) {
         let offset = 0
         while (offset < segmentSamples.length) {
-          const chunkEnd = Math.min(offset + maxChunkSamples, segmentSamples.length)
+          const chunkEnd = Math.min(offset + MAX_CHUNK_SAMPLES, segmentSamples.length)
           const chunk = segmentSamples.slice(offset, chunkEnd)
 
           const text = getAddon().transcribe(chunk, sampleRate)
@@ -377,7 +362,7 @@ export class ParakeetAsrEngine {
           })
           textParts.push(text)
 
-          offset += maxChunkSamples
+          offset += MAX_CHUNK_SAMPLES
         }
       } else {
         const text = getAddon().transcribe(segmentSamples, sampleRate)
@@ -399,6 +384,21 @@ export class ParakeetAsrEngine {
     }
   }
 
+  /**
+   * @deprecated Use transcribe() with file loading instead
+   */
+  transcribeFile(filePath: string): TranscriptionResult {
+    if (!this.initialized) {
+      throw new Error("ASR engine not initialized. Call initialize() first.")
+    }
+
+    const startTime = performance.now()
+    const text = getAddon().transcribeFile(resolve(filePath))
+    const durationMs = performance.now() - startTime
+
+    return { text, durationMs }
+  }
+
   cleanup(): void {
     if (this.vadInitialized) {
       getAddon().cleanupVad()
@@ -417,7 +417,7 @@ export class ParakeetAsrEngine {
   /* v8 ignore stop */
 }
 
-// Re-export download utilities
+// Re-export download utilities for advanced use cases
 export {
   areModelsDownloaded,
   downloadModels,
@@ -427,6 +427,10 @@ export {
   isVadModelDownloaded
 } from "./download.js"
 
+/**
+ * Check if parakeet-coreml is available on this platform.
+ * Only macOS with Apple Silicon is supported.
+ */
 export function isAvailable(): boolean {
   return process.platform === "darwin"
 }

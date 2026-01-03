@@ -22,7 +22,7 @@ The system consists of two main engines:
 │                    TypeScript API Layer                         │
 │                      src/index.ts                               │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────┐  │
-│  │ ParakeetAsrEngine│  │  downloadModels │  │ transcribeLong │  │
+│  │ ParakeetAsrEngine│  │   transcribe()  │  │  auto-download │  │
 │  └─────────────────┘  └─────────────────┘  └────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -131,12 +131,12 @@ Long Audio (Float32Array, 16kHz, mono, any length)
 
 ### TypeScript Layer (`src/`)
 
-| File            | Purpose                                                          |
-| --------------- | ---------------------------------------------------------------- |
-| `index.ts`      | Main API: `ParakeetAsrEngine` class, `transcribeLong()` with VAD |
-| `download.ts`   | Model download from Hugging Face for both ASR and VAD models     |
-| `cli.ts`        | CLI tool for model management (download, status, path)           |
-| `bindings.d.ts` | Type declarations for `bindings` package                         |
+| File            | Purpose                                                         |
+| --------------- | --------------------------------------------------------------- |
+| `index.ts`      | Main API: `ParakeetAsrEngine` class with unified `transcribe()` |
+| `download.ts`   | Model download from Hugging Face for both ASR and VAD models    |
+| `cli.ts`        | CLI tool for model management (download, status, path)          |
+| `bindings.d.ts` | Type declarations for `bindings` package                        |
 
 ### Native Layer (`src/*.mm`, `src/*.h`)
 
