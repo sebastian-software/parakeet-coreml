@@ -49,15 +49,16 @@ parakeet-coreml is a **native Node.js addon** that directly interfaces with Core
 
 ## Performance
 
-The Apple Neural Engine transforms speech recognition performance. While CPU-based solutions struggle to keep up with real-time audio, ANE acceleration delivers processing speeds that open new possibilities:
+The Apple Neural Engine transforms speech recognition performance. While CPU-based solutions struggle to keep up with real-time audio, ANE acceleration delivers:
 
-| Chip   | Speed             | Real-World Impact                         |
-| ------ | ----------------- | ----------------------------------------- |
-| M4 Pro | ~110x real-time   | 1-hour podcast transcribed in ~30 seconds |
-| M3     | ~90x real-time    | Live transcription with minimal latency   |
-| M1     | ~50-70x real-time | Comfortable batch processing              |
+| Chip | Speed           | 1 Hour Audio In |
+| ---- | --------------- | --------------- |
+| M4   | ~100x real-time | ~36 seconds     |
+| M3   | ~80x real-time  | ~45 seconds     |
+| M2   | ~70x real-time  | ~51 seconds     |
+| M1   | ~50x real-time  | ~72 seconds     |
 
-These benchmarks use the [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) model – NVIDIA's state-of-the-art Transducer-based ASR achieving near-human accuracy.
+All measurements with [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) – NVIDIA's state-of-the-art Transducer-based ASR achieving near-human accuracy. Pro/Max/Ultra variants may perform better due to additional Neural Engine cores.
 
 ## Use Cases
 
@@ -255,3 +256,7 @@ MIT – see [LICENSE](LICENSE) for details.
 
 - [NVIDIA Parakeet TDT v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) – The underlying ASR model
 - [FluidInference](https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml) – CoreML model conversion
+
+---
+
+Copyright © 2026 [Sebastian Software GmbH](https://sebastian-software.de), Mainz, Germany
