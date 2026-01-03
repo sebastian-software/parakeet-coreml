@@ -55,14 +55,14 @@
   - `pnpm test` – Run all tests
   - `pnpm test:watch` – Watch mode
   - `pnpm test:coverage` – With coverage report
-  - `pnpm test:e2e` – E2E tests only (requires macOS + models)
+  - `pnpm test:e2e` – E2E tests only
 
 ## Release Process
 
 ### release-it
 
 - Config: `.release-it.json`
-- Generates changelog from conventional commits
+- Generates changelog from conventional commits (preset: `angular`)
 - Creates GitHub releases
 - Publishes to npm
 - Run: `pnpm release`
@@ -86,31 +86,14 @@
 
 ### Full Build
 
-- `pnpm build` – Builds native addon + TypeScript
+- `pnpm build` – Builds TypeScript
 
 ## CI/CD (GitHub Actions)
 
 - `.github/workflows/ci.yml` – Lint, test, build on every push/PR
-- `.github/workflows/e2e.yml` – E2E tests (manual trigger or on release)
 - Dependabot configured for pnpm and GitHub Actions updates
 
 ## npm Package
 
-- Only includes `dist/` and `build/Release/*.node`
+- Only includes `dist/`
 - No source files in published package
-- Platform restricted: macOS arm64 (`os: ["darwin"]`, `cpu: ["arm64"]`)
-
-## Project Structure
-
-```
-src/
-  index.ts      # Main library entry point
-  cli.ts        # CLI tool (parakeet-coreml command)
-  download.ts   # Model download logic
-  *.mm, *.h     # Native Objective-C++ addon sources
-test/
-  *.test.ts     # Test files
-dist/           # Built TypeScript output
-build/          # Built native addon
-```
-
