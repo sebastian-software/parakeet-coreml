@@ -18,8 +18,7 @@
   },
   "files": [
     "dist",
-    "build/Release/*.node",
-    "test/fixtures/brian.ogg"
+    "build/Release/*.node"
   ],
   "scripts": {
     "build:native": "node-gyp rebuild",

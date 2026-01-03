@@ -93,8 +93,9 @@ async function runBenchmark(): Promise<void> {
   const audioPath = possiblePaths.find((p) => existsSync(p))
 
   if (!audioPath) {
-    console.error("Benchmark audio file not found.")
-    console.error("Run this command from the parakeet-coreml repository.")
+    console.error("Benchmark audio not found. Clone the repository to run benchmarks:")
+    console.error("  git clone https://github.com/sebastian-software/parakeet-coreml")
+    console.error("  cd parakeet-coreml && pnpm install && pnpm benchmark")
     process.exit(1)
   }
 
