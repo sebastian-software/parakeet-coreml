@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.3.0](https://github.com/sebastian-software/parakeet-coreml/compare/v0.2.0...v0.3.0) (2026-01-03)
+
+### Bug Fixes
+
+- suppress import.meta warning in CJS build ([9337849](https://github.com/sebastian-software/parakeet-coreml/commit/933784938269f0ca4a3aad2e418002bbef2e5671))
+- tests ([80157e6](https://github.com/sebastian-software/parakeet-coreml/commit/80157e6bbf25b0f0e6118a8cb2a20fed4fa66e94))
+
+### Features
+
+- added logo ([c38c39f](https://github.com/sebastian-software/parakeet-coreml/commit/c38c39fdc093ab99c402dbe456e6be2014ca4f24))
+
 # 0.2.0 (2026-01-03)
 
 ### Bug Fixes
