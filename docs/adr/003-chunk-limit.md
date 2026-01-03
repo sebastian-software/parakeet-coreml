@@ -58,21 +58,25 @@ for (let i = 0; i < samples.length; i += CHUNK_SIZE - OVERLAP) {
 }
 ```
 
-## Update: Transparent VAD Integration (ADR-005)
+## Update: Always-On VAD (ADR-005)
 
-This limitation is now transparent to users. See [ADR-005: VAD-based Segmentation for Long Audio](005-vad-segmentation.md).
+This limitation is now completely hidden from users. See [ADR-005: VAD-based Segmentation for Long Audio](005-vad-segmentation.md).
 
-The unified `transcribe()` API automatically handles any audio length:
+VAD is always used for consistent behavior:
 
 ```typescript
 const engine = new ParakeetAsrEngine()
 await engine.initialize()
 
-// Works for ANY length - VAD is used automatically when needed
 const result = await engine.transcribe(audioSamples)
+// Always includes result.segments with timestamps
 ```
 
-- **Short audio (≤15s)**: Direct transcription, no VAD overhead
-- **Long audio (>15s)**: VAD model loaded on-demand, automatic segmentation
+Benefits of always using VAD:
 
-The 15-second limit is purely an implementation detail that users never need to think about.
+- Consistent API: always get timestamps
+- Useful for subtitles, indexing, diarization
+- Minimal overhead (VAD is very fast)
+- Simpler code path
+
+The 15-second model limit is now purely internal – segments longer than 15s are automatically split.

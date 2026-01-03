@@ -43,24 +43,21 @@ Silero VAD was chosen because:
 
 ### API Design
 
-The API is unified - `transcribe()` automatically uses VAD for long audio:
+VAD is always used for consistent behavior and timestamps:
 
 ```typescript
 const engine = new ParakeetAsrEngine()
 await engine.initialize()
 
-// Works for ANY length - VAD is automatic for >15s
 const result = await engine.transcribe(samples)
 
-// Long audio includes timestamps
-if (result.segments) {
-  result.segments.forEach((seg) => {
-    console.log(`[${seg.startTime}s - ${seg.endTime}s]: ${seg.text}`)
-  })
-}
+// All results include timestamps
+result.segments.forEach((seg) => {
+  console.log(`[${seg.startTime}s - ${seg.endTime}s]: ${seg.text}`)
+})
 ```
 
-The VAD model is loaded on-demand when audio exceeds 15 seconds.
+The VAD model is loaded on first `transcribe()` call.
 
 ## Consequences
 

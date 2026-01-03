@@ -102,11 +102,9 @@ console.log(result.text)
 
 console.log(`Processed in ${result.durationMs}ms`)
 
-// Long audio automatically includes timestamps
-if (result.segments) {
-  for (const seg of result.segments) {
-    console.log(`[${seg.startTime}s] ${seg.text}`)
-  }
+// Every result includes timestamps
+for (const seg of result.segments) {
+  console.log(`[${seg.startTime}s] ${seg.text}`)
 }
 
 engine.cleanup()
@@ -121,9 +119,9 @@ That's it. No API keys. No configuration. No internet required after the initial
 | Sample Rate | **16,000 Hz** (16 kHz)                        |
 | Channels    | **Mono** (single channel)                     |
 | Format      | **Float32Array** with values between -1.0–1.0 |
-| Duration    | **Any length** (VAD handles long audio)       |
+| Duration    | **Any length**                                |
 
-For audio longer than 15 seconds, Voice Activity Detection (VAD) automatically segments at natural speech boundaries. Each segment is transcribed and combined, with timestamps included in the result.
+Voice Activity Detection (VAD) automatically finds speech segments and provides timestamps. The result always includes `segments` with timing information – useful for subtitles, search indexing, or speaker diarization.
 
 ### Converting Audio Files
 
@@ -224,9 +222,9 @@ new ParakeetAsrEngine(options?: AsrEngineOptions)
 
 ```typescript
 interface TranscriptionResult {
-  text: string // The transcribed text
+  text: string // Combined transcription
   durationMs: number // Processing time in milliseconds
-  segments?: TranscribedSegment[] // Present for long audio (>15s)
+  segments: TranscribedSegment[] // Speech segments with timestamps
 }
 
 interface TranscribedSegment {
@@ -274,8 +272,9 @@ interface TranscribeOptions {
 
 The library bridges Node.js directly to Apple's CoreML framework via a native N-API addon written in Objective-C++. Both ASR and VAD models run on the Neural Engine:
 
-- **Short audio (≤15s)**: Direct transcription
-- **Long audio (>15s)**: Automatic VAD segmentation → parallel transcription → combined results with timestamps
+1. **VAD** detects speech segments with timestamps
+2. **ASR** transcribes each segment (splitting at 15s if needed)
+3. Results are combined with full timing information
 
 This eliminates subprocess overhead and Python interop, resulting in minimal latency and efficient memory usage.
 

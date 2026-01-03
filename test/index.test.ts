@@ -88,10 +88,5 @@ describe("index", () => {
         await expect(engine.initialize()).rejects.toThrow()
       })
     }
-
-    it("transcribeFile throws before initialization", () => {
-      const engine = new ParakeetAsrEngine()
-      expect(() => engine.transcribeFile("/some/file.wav")).toThrow("not initialized")
-    })
   })
 })

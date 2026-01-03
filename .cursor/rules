@@ -110,5 +110,5 @@
 ## API Overview
 
 - `transcribe()`: Unified API for audio of any length
-  - Short audio (≤15s): Direct transcription
-  - Long audio (>15s): Automatic VAD segmentation
+  - Always uses VAD for consistent timestamps
+  - Returns `{ text, segments, durationMs }`

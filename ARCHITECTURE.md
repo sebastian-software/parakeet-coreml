@@ -61,40 +61,10 @@ The system consists of two main engines:
 
 ## Data Flow
 
-### Short Audio (≤15s) - Direct Transcription
+### Unified Pipeline (all audio)
 
 ```
-Audio Samples (Float32Array, 16kHz, mono)
-           │
-           ▼
-    ┌──────────────┐
-    │ Preprocessor │  CoreML model converts audio to mel spectrogram
-    │  (CoreML)    │  Input: [1, 240000] samples (15s max)
-    │              │  Output: [1, 128, 1501] mel features
-    └──────────────┘
-           │
-           ▼
-    ┌──────────────┐
-    │   Encoder    │  Transformer encoder processes mel features
-    │  (CoreML)    │  Input: [1, 128, 1501] mel features
-    │              │  Output: [1, 1024, 188] encoded features
-    └──────────────┘
-           │
-           ▼
-    ┌──────────────┐
-    │  Transducer  │  Greedy decoding with prediction network
-    │   Decoder    │  Iteratively predicts tokens until EOS
-    │  (CoreML)    │
-    └──────────────┘
-           │
-           ▼
-    Token IDs → Vocabulary Lookup → Text
-```
-
-### Long Audio (any length) - VAD + Transcription
-
-```
-Long Audio (Float32Array, 16kHz, mono, any length)
+Audio Samples (Float32Array, 16kHz, mono, any length)
            │
            ▼
     ┌───────────────────────────────────────────────────┐

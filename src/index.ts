@@ -95,14 +95,14 @@ export interface TranscribedSegment {
  * Transcription result
  */
 export interface TranscriptionResult {
+  /** Combined transcription text */
   text: string
+
+  /** Processing time in milliseconds */
   durationMs: number
 
-  /**
-   * Speech segments with timestamps.
-   * Only present for long audio (>15s) that was automatically segmented.
-   */
-  segments?: TranscribedSegment[]
+  /** Speech segments with timestamps */
+  segments: TranscribedSegment[]
 }
 
 /**
@@ -302,12 +302,12 @@ export class ParakeetAsrEngine {
   /**
    * Transcribe audio of any length.
    *
-   * For short audio (≤15s), transcription is immediate.
-   * For long audio (>15s), VAD automatically segments at speech boundaries.
+   * Uses Voice Activity Detection (VAD) to find speech segments,
+   * then transcribes each segment. Results include timestamps.
    *
    * @param samples Audio samples (16kHz, mono, Float32Array)
    * @param options Transcription options
-   * @returns Transcription result (with segments for long audio)
+   * @returns Transcription result with segments
    */
   async transcribe(
     samples: Float32Array,
@@ -320,14 +320,7 @@ export class ParakeetAsrEngine {
     const sampleRate = options.sampleRate ?? 16000
     const startTime = performance.now()
 
-    // Short audio: direct transcription
-    if (samples.length <= MAX_CHUNK_SAMPLES) {
-      const text = getAddon().transcribe(samples, sampleRate)
-      const durationMs = performance.now() - startTime
-      return { text, durationMs }
-    }
-
-    // Long audio: use VAD for intelligent segmentation
+    // Always use VAD for consistent behavior and timestamps
     await this.ensureVadInitialized()
 
     const speechSegments = getAddon().detectSpeechSegments(samples, {
@@ -344,7 +337,7 @@ export class ParakeetAsrEngine {
       const endSample = Math.min(Math.floor(segment.endTime * sampleRate), samples.length)
       const segmentSamples = samples.slice(startSample, endSample)
 
-      // If segment is longer than 15s, split into chunks
+      // Split long segments at 15s boundaries (model limit)
       if (segmentSamples.length > MAX_CHUNK_SAMPLES) {
         let offset = 0
         while (offset < segmentSamples.length) {
@@ -382,21 +375,6 @@ export class ParakeetAsrEngine {
       segments: transcribedSegments,
       durationMs
     }
-  }
-
-  /**
-   * @deprecated Use transcribe() with file loading instead
-   */
-  transcribeFile(filePath: string): TranscriptionResult {
-    if (!this.initialized) {
-      throw new Error("ASR engine not initialized. Call initialize() first.")
-    }
-
-    const startTime = performance.now()
-    const text = getAddon().transcribeFile(resolve(filePath))
-    const durationMs = performance.now() - startTime
-
-    return { text, durationMs }
   }
 
   cleanup(): void {

@@ -61,109 +61,69 @@ describe.runIf(isAvailable())("E2E: ParakeetAsrEngine", () => {
       expect(version).toHaveProperty("coreml")
     })
 
-    it("should transcribe silence to empty or minimal text", async () => {
-      // Generate 1 second of silence at 16kHz
-      const sampleRate = 16000
-      const duration = 1
-      const samples = new Float32Array(sampleRate * duration)
+    it("should detect no speech in silence", async () => {
+      const samples = new Float32Array(16000 * 2) // 2s silence
 
-      const result = await engine.transcribe(samples, { sampleRate })
+      const result = await engine.transcribe(samples)
 
-      expect(result).toHaveProperty("text")
-      expect(result).toHaveProperty("durationMs")
-      expect(typeof result.text).toBe("string")
+      expect(result.segments).toHaveLength(0)
+      expect(result.text).toBe("")
       expect(result.durationMs).toBeGreaterThan(0)
     })
 
-    it("should transcribe a sine wave tone", async () => {
+    it("should handle sine wave tone (no speech detected)", async () => {
       // Generate 1 second of 440Hz sine wave (A4 note)
       const sampleRate = 16000
-      const duration = 1
       const frequency = 440
-      const samples = new Float32Array(sampleRate * duration)
+      const samples = new Float32Array(sampleRate)
 
       for (let i = 0; i < samples.length; i++) {
         samples[i] = Math.sin((2 * Math.PI * frequency * i) / sampleRate) * 0.5
       }
 
-      const result = await engine.transcribe(samples, { sampleRate })
+      const result = await engine.transcribe(samples)
 
+      // VAD should not detect pure tones as speech
       expect(result).toHaveProperty("text")
-      expect(result).toHaveProperty("durationMs")
-      expect(result.durationMs).toBeGreaterThan(0)
-      // A tone shouldn't produce meaningful speech, but the engine should handle it
-    })
-
-    it("should handle longer audio segments (uses VAD automatically)", async () => {
-      // Generate 20 seconds of silence (> 15s triggers VAD)
-      const sampleRate = 16000
-      const duration = 20
-      const samples = new Float32Array(sampleRate * duration)
-
-      const result = await engine.transcribe(samples, { sampleRate })
-
-      expect(result).toHaveProperty("text")
-      expect(result.durationMs).toBeGreaterThan(0)
-      // Long audio should have segments property (from VAD)
       expect(result).toHaveProperty("segments")
+      expect(result.durationMs).toBeGreaterThan(0)
     })
 
-    it("should transcribe real speech audio (short)", async () => {
+    it("should transcribe short speech audio with timestamps", async () => {
       const samples = loadWav(join(__dirname, "fixtures/brian-10s.wav"))
-
-      expect(samples.length).toBeGreaterThan(0)
-      expect(samples.length).toBeLessThanOrEqual(15 * 16000) // Should be ≤15s
 
       const result = await engine.transcribe(samples)
 
+      // Always has segments now
+      expect(result.segments.length).toBeGreaterThan(0)
       expect(result.text).toContain("History")
       expect(result.text).toContain("Urban")
       expect(result.text).toContain("Transportation")
       expect(result.durationMs).toBeGreaterThan(0)
       expect(result.durationMs).toBeLessThan(5000) // Should be fast
-      // Short audio doesn't have segments
-      expect(result.segments).toBeUndefined()
-    })
-
-    it("should transcribe real speech audio (long, uses VAD)", async () => {
-      const samples = loadWav(join(__dirname, "fixtures/brian-30s.wav"))
-
-      expect(samples.length).toBeGreaterThan(15 * 16000) // Should be >15s
-
-      const result = await engine.transcribe(samples)
-
-      expect(result.text).toContain("Transportation")
-      expect(result.durationMs).toBeGreaterThan(0)
-
-      // Long audio should have segments from VAD
-      expect(result.segments).toBeDefined()
-      expect(result.segments!.length).toBeGreaterThan(0)
 
       // Check segment structure
-      for (const segment of result.segments!) {
+      for (const segment of result.segments) {
         expect(segment).toHaveProperty("startTime")
         expect(segment).toHaveProperty("endTime")
         expect(segment).toHaveProperty("text")
         expect(segment.endTime).toBeGreaterThan(segment.startTime)
       }
-
-      // Segments should be in order
-      for (let i = 1; i < result.segments!.length; i++) {
-        expect(result.segments![i].startTime).toBeGreaterThanOrEqual(
-          result.segments![i - 1].endTime
-        )
-      }
     })
 
-    it("should detect no speech in long silence", async () => {
-      const samples = new Float32Array(16000 * 20) // 20s silence
+    it("should transcribe long speech audio with timestamps", async () => {
+      const samples = loadWav(join(__dirname, "fixtures/brian-30s.wav"))
 
       const result = await engine.transcribe(samples)
 
-      // VAD should find no speech segments
-      expect(result.segments).toBeDefined()
-      expect(result.segments).toHaveLength(0)
-      expect(result.text).toBe("")
+      expect(result.segments.length).toBeGreaterThan(0)
+      expect(result.text).toContain("Transportation")
+      expect(result.durationMs).toBeGreaterThan(0)
+
+      // Segments should be in order
+      for (let i = 1; i < result.segments.length; i++) {
+        expect(result.segments[i].startTime).toBeGreaterThanOrEqual(result.segments[i - 1].endTime)
+      }
     })
   })
 })
