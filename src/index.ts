@@ -5,12 +5,13 @@
  */
 
 import { existsSync } from "node:fs"
-import { createRequire } from "node:module"
 import { join, resolve } from "node:path"
 
 import { areModelsDownloaded, downloadModels, getDefaultModelDir } from "./download.js"
 
-const require = createRequire(import.meta.url)
+// Dynamic require for loading native addon (works in both ESM and CJS)
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+const bindingsModule = require("bindings") as (name: string) => unknown
 
 /**
  * Native addon interface
@@ -33,8 +34,7 @@ function loadAddon(): NativeAddon {
   }
 
   try {
-    const bindings = require("bindings") as (name: string) => unknown
-    return bindings("coreml_asr") as NativeAddon
+    return bindingsModule("coreml_asr") as NativeAddon
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(`Failed to load Parakeet ASR native addon: ${message}`)

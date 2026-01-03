@@ -9,5 +9,13 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ["bindings"]
+  external: ["bindings"],
+  // Shim require for ESM builds
+  shims: true,
+  // Suppress import.meta warning for CJS (we handle it with shims)
+  esbuildOptions(options) {
+    options.logOverride = {
+      "empty-import-meta": "silent"
+    }
+  }
 })
