@@ -35,7 +35,7 @@ jobs:
         run: pnpm build
 
       - name: Download models
-        run: pnpm exec parakeet-coreml download
+        run: node ./dist/cli.js download
 
       - name: Run E2E tests
         run: pnpm test test/e2e.test.ts
