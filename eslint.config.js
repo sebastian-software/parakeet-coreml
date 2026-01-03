@@ -1,4 +1,5 @@
 import eslint from "@eslint/js"
+import stylistic from "@stylistic/eslint-plugin"
 import tseslint from "typescript-eslint"
 
 export default tseslint.config(
@@ -6,6 +7,9 @@ export default tseslint.config(
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   {
+    plugins: {
+      "@stylistic": stylistic
+    },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -15,6 +19,24 @@ export default tseslint.config(
   },
   {
     rules: {
+      // Require braces for all control statements
+      curly: ["error", "all"],
+
+      // Require blank line before block comments, except at start of blocks/interfaces
+      "@stylistic/lines-around-comment": [
+        "error",
+        {
+          beforeBlockComment: true,
+          allowBlockStart: true,
+          allowObjectStart: true,
+          allowArrayStart: true,
+          allowClassStart: true,
+          allowInterfaceStart: true,
+          allowTypeStart: true,
+          allowEnumStart: true
+        }
+      ],
+
       // Allow console for this CLI-oriented package
       "no-console": "off",
 

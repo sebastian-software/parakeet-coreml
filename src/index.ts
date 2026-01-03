@@ -91,7 +91,9 @@ export class ParakeetAsrEngine {
    * Downloads models automatically if not present and autoDownload is enabled.
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) {
+      return
+    }
 
     // Check if models exist, download if needed
     if (!areModelsDownloaded(this.modelDir)) {
@@ -146,7 +148,9 @@ export class ParakeetAsrEngine {
   }
 
   isReady(): boolean {
-    if (!this.initialized) return false
+    if (!this.initialized) {
+      return false
+    }
     return getAddon().isInitialized()
   }
 
@@ -188,9 +192,6 @@ export class ParakeetAsrEngine {
 
 // Re-export download utilities
 export { areModelsDownloaded, downloadModels, getDefaultModelDir }
-
-// Legacy alias for backwards compatibility
-export { ParakeetAsrEngine as CoreMLAsrEngine }
 
 export function isAvailable(): boolean {
   return process.platform === "darwin"

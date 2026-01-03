@@ -23,7 +23,9 @@ export function getDefaultModelDir(): string {
 export function areModelsDownloaded(modelDir?: string): boolean {
   const dir = modelDir ?? getDefaultModelDir()
 
-  if (!existsSync(dir)) return false
+  if (!existsSync(dir)) {
+    return false
+  }
 
   const encoderOptions = ["ParakeetEncoder_15s.mlmodelc", "Encoder.mlmodelc"]
   const decoderOptions = ["ParakeetDecoder.mlmodelc", "Decoder.mlmodelc"]
@@ -53,8 +55,10 @@ interface DownloadProgress {
 export interface DownloadOptions {
   /** Target directory for models (default: ~/.cache/parakeet-coreml/models) */
   modelDir?: string
+
   /** Progress callback */
   onProgress?: (progress: DownloadProgress) => void
+
   /** Force re-download even if models exist */
   force?: boolean
 }
@@ -149,7 +153,9 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
 
   for (let i = 0; i < modelFiles.length; i++) {
     const file = modelFiles[i]
-    if (!file) continue
+    if (!file) {
+      continue
+    }
 
     await downloadFile(file.path, modelDir)
 
@@ -186,7 +192,9 @@ function convertVocabToTokens(modelDir: string): void {
   const tokensPath = join(modelDir, "tokens.txt")
 
   // Skip if tokens.txt already exists
-  if (existsSync(tokensPath)) return
+  if (existsSync(tokensPath)) {
+    return
+  }
 
   // Find the JSON vocab file
   const vocabFiles = ["parakeet_vocab.json", "parakeet_v3_vocab.json"]
@@ -225,8 +233,14 @@ function convertVocabToTokens(modelDir: string): void {
  * Format bytes to human readable string
  */
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${String(bytes)} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  if (bytes < 1024) {
+    return `${String(bytes)} B`
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`
+  }
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  }
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`
 }
