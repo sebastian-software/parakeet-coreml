@@ -37,7 +37,8 @@
     "format:check": "prettier --check .",
     "prepare": "husky",
     "prepublishOnly": "npm run build",
-    "release": "release-it"
+    "release": "release-it",
+    "release:auto": "release-it --ci"
   },
   "keywords": [
     "asr",
