@@ -63,10 +63,10 @@ export interface DownloadOptions {
   force?: boolean
 }
 
+/* v8 ignore start - network I/O */
 /**
  * Fetch file tree from Hugging Face
  */
-/* v8 ignore start - network I/O */
 async function fetchFileTree(path = ""): Promise<TreeEntry[]> {
   const url = `${HUGGINGFACE_API}/tree/main${path ? `/${path}` : ""}`
   const response = await fetch(url)
@@ -100,10 +100,10 @@ async function getAllFiles(path = ""): Promise<TreeEntry[]> {
 
 /* v8 ignore stop */
 
+/* v8 ignore start - network I/O */
 /**
  * Download a single file
  */
-/* v8 ignore start - network I/O */
 async function downloadFile(filePath: string, destDir: string): Promise<void> {
   const url = `${HUGGINGFACE_DOWNLOAD}/${filePath}`
   const destPath = join(destDir, filePath)

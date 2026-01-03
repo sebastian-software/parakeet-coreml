@@ -25,10 +25,10 @@ interface NativeAddon {
   getVersion(): { addon: string; model: string; coreml: string }
 }
 
+/* v8 ignore start - platform checks and native addon loading */
 /**
  * Load the native addon
  */
-/* v8 ignore start - platform checks and native addon loading */
 function loadAddon(): NativeAddon {
   if (process.platform !== "darwin") {
     throw new Error("parakeet-coreml is only supported on macOS")
