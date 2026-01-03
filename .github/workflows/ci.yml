@@ -19,8 +19,9 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      # --force bypasses os/cpu restrictions (package is macOS-only but linting works everywhere)
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --force
 
       - name: Run ESLint
         run: npm run lint
@@ -43,8 +44,9 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      # --force bypasses os/cpu restrictions (package is macOS-only but unit tests work everywhere)
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --force
 
       - name: Build TypeScript
         run: npm run build:ts
