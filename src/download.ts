@@ -2,7 +2,7 @@
  * Model download functionality for parakeet-coreml
  */
 
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 
@@ -171,8 +171,54 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
     )
   }
 
+  // Convert JSON vocab to tokens.txt format (required by native addon)
+  convertVocabToTokens(modelDir)
+
   console.log("\n✓ Models downloaded successfully!")
   return modelDir
+}
+
+/**
+ * Convert JSON vocabulary file to tokens.txt format
+ * The native addon expects one token per line
+ */
+function convertVocabToTokens(modelDir: string): void {
+  const tokensPath = join(modelDir, "tokens.txt")
+
+  // Skip if tokens.txt already exists
+  if (existsSync(tokensPath)) return
+
+  // Find the JSON vocab file
+  const vocabFiles = ["parakeet_vocab.json", "parakeet_v3_vocab.json"]
+  let vocabPath: string | null = null
+
+  for (const file of vocabFiles) {
+    const path = join(modelDir, file)
+    if (existsSync(path)) {
+      vocabPath = path
+      break
+    }
+  }
+
+  if (!vocabPath) {
+    console.warn("Warning: No vocabulary file found to convert")
+    return
+  }
+
+  console.log("Converting vocabulary to tokens.txt format...")
+
+  const vocabJson = JSON.parse(readFileSync(vocabPath, "utf-8")) as Record<string, string>
+
+  // Convert {index: token} to array sorted by index
+  const maxIndex = Math.max(...Object.keys(vocabJson).map(Number))
+  const tokens: string[] = new Array<string>(maxIndex + 1).fill("")
+
+  for (const [index, token] of Object.entries(vocabJson)) {
+    tokens[Number(index)] = token
+  }
+
+  // Write one token per line
+  writeFileSync(tokensPath, tokens.join("\n"))
 }
 
 /**

@@ -37,7 +37,7 @@ import { ParakeetAsrEngine } from "parakeet-coreml"
 // Create engine (models download automatically on first use)
 const engine = new ParakeetAsrEngine()
 
-// Initialize (downloads ~6GB models if not cached)
+// Initialize (downloads ~1.5GB models if not cached)
 await engine.initialize()
 
 // Transcribe audio (16kHz, mono, Float32)
