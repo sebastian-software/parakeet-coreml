@@ -13,24 +13,27 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       # --force bypasses os/cpu restrictions (package is macOS-only but linting works everywhere)
       - name: Install dependencies
-        run: npm ci --ignore-scripts --force
+        run: pnpm install --ignore-scripts --force
 
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Run Prettier check
-        run: npm run format:check
+        run: pnpm format:check
 
       - name: Run TypeScript check
-        run: npm run typecheck
+        run: pnpm typecheck
 
   test:
     name: Test
@@ -38,21 +41,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       # --force bypasses os/cpu restrictions (package is macOS-only but unit tests work everywhere)
       - name: Install dependencies
-        run: npm ci --ignore-scripts --force
+        run: pnpm install --ignore-scripts --force
 
       - name: Build TypeScript
-        run: npm run build:ts
+        run: pnpm build:ts
 
       - name: Run tests with coverage
-        run: npm run test:coverage
+        run: pnpm test:coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -67,20 +73,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Build native addon
-        run: npm run build:native
+        run: pnpm build:native
 
       - name: Build TypeScript
-        run: npm run build:ts
+        run: pnpm build:ts
 
       - name: Verify build artifacts
         run: |
