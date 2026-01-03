@@ -156,23 +156,17 @@ Models are automatically downloaded on first use:
 ### CLI Commands
 
 ```bash
-# Download ASR models only
+# Download all models (~1.5GB)
 npx parakeet-coreml download
 
-# Download VAD model only
-npx parakeet-coreml download-vad
-
-# Download all models (ASR + VAD)
-npx parakeet-coreml download-all
-
-# Check download status
+# Check status
 npx parakeet-coreml status
 
-# Show cache locations
+# Show cache path
 npx parakeet-coreml path
 
-# Force fresh download
-npx parakeet-coreml download-all --force
+# Force re-download
+npx parakeet-coreml download --force
 ```
 
 ### Custom Configuration

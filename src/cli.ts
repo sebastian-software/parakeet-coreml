@@ -20,18 +20,16 @@ function printHelp(): void {
 parakeet-coreml CLI
 
 Commands:
-  download [--force]      Download ASR models (~1.5GB)
-  download-vad [--force]  Download VAD model (~1MB, for long audio)
-  download-all [--force]  Download all models
-  status                  Check model status
-  path                    Print model directory paths
+  download [--force]  Download all models (~1.5GB)
+  status              Check if models are downloaded
+  path                Print model directory paths
 
-Note: Models are auto-downloaded on first use. Pre-download for
+Models are auto-downloaded on first use. Pre-download for
 faster cold starts or offline environments.
 
 Options:
-  --force                 Force re-download even if models exist
-  --help, -h              Show this help message
+  --force             Force re-download even if models exist
+  --help, -h          Show this help message
 `)
 }
 
@@ -44,46 +42,16 @@ async function main(): Promise<void> {
   switch (command) {
     case "download": {
       const force = args.includes("--force")
-      console.log("Parakeet ASR Model Downloader")
-      console.log("=============================")
-      console.log(`Target: ${getDefaultModelDir()}\n`)
+      console.log("Parakeet CoreML Model Downloader")
+      console.log("================================\n")
 
       try {
-        await downloadModels({ force })
-      } catch (error) {
-        console.error("\n✗ Download failed:", error instanceof Error ? error.message : error)
-        process.exit(1)
-      }
-      break
-    }
-
-    case "download-vad": {
-      const force = args.includes("--force")
-      console.log("Silero VAD Model Downloader")
-      console.log("===========================")
-      console.log(`Target: ${getDefaultVadDir()}\n`)
-
-      try {
-        await downloadVadModel({ force })
-      } catch (error) {
-        console.error("\n✗ Download failed:", error instanceof Error ? error.message : error)
-        process.exit(1)
-      }
-      break
-    }
-
-    case "download-all": {
-      const force = args.includes("--force")
-      console.log("Parakeet CoreML - Download All Models")
-      console.log("=====================================\n")
-
-      try {
-        console.log("1. Downloading ASR models...")
-        console.log(`   Target: ${getDefaultModelDir()}\n`)
+        console.log("Downloading ASR models...")
+        console.log(`Target: ${getDefaultModelDir()}\n`)
         await downloadModels({ force })
 
-        console.log("\n2. Downloading VAD model...")
-        console.log(`   Target: ${getDefaultVadDir()}\n`)
+        console.log("\nDownloading VAD model...")
+        console.log(`Target: ${getDefaultVadDir()}\n`)
         await downloadVadModel({ force })
 
         console.log("\n✓ All models downloaded successfully!")
@@ -95,28 +63,21 @@ async function main(): Promise<void> {
     }
 
     case "status": {
-      const modelDir = getDefaultModelDir()
-      const vadDir = getDefaultVadDir()
       const asrDownloaded = areModelsDownloaded()
       const vadDownloaded = isVadModelDownloaded()
+      const allReady = asrDownloaded && vadDownloaded
 
       console.log("Parakeet CoreML Status")
       console.log("======================")
-      console.log(`ASR model directory: ${modelDir}`)
-      console.log(`ASR models downloaded: ${asrDownloaded ? "✓ Yes" : "✗ No"}`)
+      console.log(`ASR models: ${asrDownloaded ? "✓ Ready" : "✗ Not downloaded"}`)
+      console.log(`VAD model:  ${vadDownloaded ? "✓ Ready" : "✗ Not downloaded"}`)
       console.log("")
-      console.log(`VAD model directory: ${vadDir}`)
-      console.log(`VAD model downloaded: ${vadDownloaded ? "✓ Yes" : "✗ No"}`)
-
-      if (!asrDownloaded || !vadDownloaded) {
-        console.log('\nRun "npx parakeet-coreml download-all" to download all models.')
-      }
+      console.log(`Status: ${allReady ? "✓ Ready to use" : "✗ Run 'npx parakeet-coreml download'"}`)
       break
     }
 
     case "path": {
-      console.log("ASR models:", getDefaultModelDir())
-      console.log("VAD model: ", getDefaultVadDir())
+      console.log(getDefaultModelDir())
       break
     }
 
