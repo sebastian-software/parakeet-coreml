@@ -18,10 +18,7 @@
   },
   "files": [
     "dist",
-    "build",
-    "src/*.mm",
-    "src/*.h",
-    "binding.gyp"
+    "build/Release/*.node"
   ],
   "scripts": {
     "build:native": "node-gyp rebuild",
