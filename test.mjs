@@ -54,7 +54,12 @@ try {
   }
 
   console.log("Audio samples:", normalized.length)
-  console.log("Sample range:", Math.min(...normalized.slice(0, 1000)), "to", Math.max(...normalized.slice(0, 1000)))
+  console.log(
+    "Sample range:",
+    Math.min(...normalized.slice(0, 1000)),
+    "to",
+    Math.max(...normalized.slice(0, 1000))
+  )
   console.log("\nTranscribing...")
 
   const result = await engine.transcribe(normalized, 16000)

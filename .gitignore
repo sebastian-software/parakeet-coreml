@@ -2,6 +2,7 @@
 build/
 dist/
 prebuilds/
+coverage/
 
 # Dependencies
 node_modules/

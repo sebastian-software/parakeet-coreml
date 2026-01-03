@@ -8,6 +8,8 @@ import { existsSync } from "node:fs"
 import { createRequire } from "node:module"
 import { join, resolve } from "node:path"
 
+import { areModelsDownloaded, downloadModels, getDefaultModelDir } from "./download.js"
+
 const require = createRequire(import.meta.url)
 
 /**
@@ -31,7 +33,7 @@ function loadAddon(): NativeAddon {
   }
 
   try {
-    const bindings = require("bindings")
+    const bindings = require("bindings") as (name: string) => unknown
     return bindings("coreml_asr") as NativeAddon
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -42,9 +44,7 @@ function loadAddon(): NativeAddon {
 let addon: NativeAddon | null = null
 
 function getAddon(): NativeAddon {
-  if (addon === null) {
-    addon = loadAddon()
-  }
+  addon ??= loadAddon()
   return addon
 }
 
@@ -60,7 +60,17 @@ export interface TranscriptionResult {
  * ASR Engine options
  */
 export interface AsrEngineOptions {
-  modelDir: string
+  /**
+   * Path to the model directory.
+   * If not provided, uses the default cache directory (~/.cache/parakeet-coreml/models).
+   */
+  modelDir?: string
+
+  /**
+   * Automatically download models if not present.
+   * @default true
+   */
+  autoDownload?: boolean
 }
 
 /**
@@ -68,14 +78,33 @@ export interface AsrEngineOptions {
  */
 export class ParakeetAsrEngine {
   private readonly modelDir: string
+  private readonly autoDownload: boolean
   private initialized = false
 
-  constructor(options: AsrEngineOptions) {
-    this.modelDir = resolve(options.modelDir)
+  constructor(options: AsrEngineOptions = {}) {
+    this.modelDir = options.modelDir ? resolve(options.modelDir) : getDefaultModelDir()
+    this.autoDownload = options.autoDownload ?? true
   }
 
+  /**
+   * Initialize the ASR engine.
+   * Downloads models automatically if not present and autoDownload is enabled.
+   */
   async initialize(): Promise<void> {
     if (this.initialized) return
+
+    // Check if models exist, download if needed
+    if (!areModelsDownloaded(this.modelDir)) {
+      if (this.autoDownload) {
+        console.log("Models not found. Downloading...")
+        await downloadModels({ modelDir: this.modelDir })
+      } else {
+        throw new Error(
+          `Models not found in ${this.modelDir}. ` +
+            `Run "npx parakeet-coreml download" or enable autoDownload.`
+        )
+      }
+    }
 
     if (!existsSync(this.modelDir)) {
       throw new Error(`Model directory not found: ${this.modelDir}`)
@@ -95,9 +124,15 @@ export class ParakeetAsrEngine {
       )
     }
 
-    const hasVocab = existsSync(join(this.modelDir, "vocab.txt")) || existsSync(join(this.modelDir, "tokens.txt"))
+    const vocabOptions = [
+      "parakeet_vocab.json",
+      "parakeet_v3_vocab.json",
+      "vocab.txt",
+      "tokens.txt"
+    ]
+    const hasVocab = vocabOptions.some((f) => existsSync(join(this.modelDir, f)))
     if (!hasVocab) {
-      throw new Error(`Missing vocabulary file (vocab.txt or tokens.txt) in ${this.modelDir}`)
+      throw new Error(`Missing vocabulary file in ${this.modelDir}`)
     }
 
     const nativeAddon = getAddon()
@@ -115,7 +150,7 @@ export class ParakeetAsrEngine {
     return getAddon().isInitialized()
   }
 
-  async transcribe(samples: Float32Array, sampleRate = 16000): Promise<TranscriptionResult> {
+  transcribe(samples: Float32Array, sampleRate = 16000): TranscriptionResult {
     if (!this.initialized) {
       throw new Error("ASR engine not initialized. Call initialize() first.")
     }
@@ -127,7 +162,7 @@ export class ParakeetAsrEngine {
     return { text, durationMs }
   }
 
-  async transcribeFile(filePath: string): Promise<TranscriptionResult> {
+  transcribeFile(filePath: string): TranscriptionResult {
     if (!this.initialized) {
       throw new Error("ASR engine not initialized. Call initialize() first.")
     }
@@ -150,6 +185,9 @@ export class ParakeetAsrEngine {
     return getAddon().getVersion()
   }
 }
+
+// Re-export download utilities
+export { areModelsDownloaded, downloadModels, getDefaultModelDir }
 
 // Legacy alias for backwards compatibility
 export { ParakeetAsrEngine as CoreMLAsrEngine }
