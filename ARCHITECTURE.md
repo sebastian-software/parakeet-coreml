@@ -161,13 +161,12 @@ Design decisions are documented as Architecture Decision Records (ADRs) in `docs
 
 ## Performance Characteristics
 
-| Metric              | Value            | Notes                           |
-| ------------------- | ---------------- | ------------------------------- |
-| ASR model load      | ~2-3s            | One-time cost at initialization |
-| VAD model load      | ~0.1s            | Additional if VAD enabled       |
-| Transcription speed | ~110x real-time  | On M4 Pro, varies by chip       |
-| VAD processing      | ~0.01x real-time | Negligible overhead             |
-| Memory usage        | ~500MB           | ASR models loaded               |
-| Memory usage (VAD)  | ~10MB            | Additional for VAD model        |
-| Max audio (short)   | 15 seconds       | Per transcribe() call           |
-| Max audio (long)    | Unlimited        | With VAD via transcribeLong()   |
+| Metric              | Value         | Notes                           |
+| ------------------- | ------------- | ------------------------------- |
+| ASR model load      | 2-3s          | One-time cost at initialization |
+| VAD model load      | 0.1s          | On first transcribe() call      |
+| Transcription speed | 40x real-time | Measured on M1 Ultra            |
+| VAD processing      | <1% overhead  | Negligible                      |
+| Memory usage        | 500MB         | ASR models loaded               |
+| Memory usage (VAD)  | 10MB          | Additional for VAD model        |
+| Max audio           | Unlimited     | VAD segments automatically      |

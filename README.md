@@ -40,7 +40,7 @@ parakeet-coreml is a **native Node.js addon** that directly interfaces with Core
 
 ## Features
 
-- 🚀 **~110x real-time** – Transcribe 1 minute of audio in ~0.5 seconds (M4 Pro)
+- 🚀 **40x real-time** – Transcribe 1 hour of audio in 90 seconds (M1 Ultra, measured)
 - 🍎 **Neural Engine Acceleration** – Runs on Apple's dedicated ML silicon, not CPU
 - 🔒 **Fully Offline** – All processing happens locally. Your audio never leaves your device.
 - 📦 **Zero Runtime Dependencies** – No Python, no subprocess, no external services
@@ -57,7 +57,7 @@ The Apple Neural Engine delivers exceptional speech recognition performance:
 ```
 5 minutes of audio → 7.7 seconds
 Speed: 40x real-time
-1 hour of audio in ~90 seconds
+1 hour of audio in 90 seconds
 ```
 
 Run your own benchmark:
@@ -73,11 +73,11 @@ Based on Neural Engine TOPS (tera operations per second):
 
 | Chip     | ANE TOPS | Estimated Speed    |
 | -------- | -------- | ------------------ |
-| M4 Pro   | 38       | ~70x real-time     |
-| M3 Pro   | 18       | ~35x real-time     |
-| M2 Pro   | 15.8     | ~30x real-time     |
-| M1 Ultra | 22       | **40x** (measured) |
-| M1 Pro   | 11       | ~20x real-time     |
+| M4 Pro   | 38       | 70x real-time      |
+| M3 Pro   | 18       | 35x real-time      |
+| M2 Pro   | 16       | 30x real-time      |
+| M1 Ultra | 22       | **40x (measured)** |
+| M1 Pro   | 11       | 20x real-time      |
 
 Performance scales roughly with Neural Engine compute. Ultra variants have 2x ANE cores. Results may vary based on thermal conditions and system load.
 

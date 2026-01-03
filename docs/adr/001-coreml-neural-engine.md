@@ -21,7 +21,7 @@ We chose **CoreML with direct Objective-C++ integration** for these reasons:
 
 CoreML provides exclusive access to the Apple Neural Engine (ANE), a dedicated ML accelerator present in all Apple Silicon chips. The ANE delivers:
 
-- **~110x real-time** transcription on M4 Pro
+- **40x real-time** transcription measured on M1 Ultra (estimated 70x on M4 Pro)
 - **Significantly faster** than CPU-based alternatives like whisper.cpp
 - **Lower power consumption** compared to GPU execution
 
