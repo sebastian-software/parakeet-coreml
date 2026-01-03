@@ -7,7 +7,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "parakeet-coreml": "./dist/cli.js"
+    "parakeet-coreml": "./dist/cli.cjs"
   },
   "exports": {
     ".": {
@@ -18,7 +18,8 @@
   },
   "files": [
     "dist",
-    "build/Release/*.node"
+    "build/Release/*.node",
+    "test/fixtures/*.wav"
   ],
   "scripts": {
     "build:native": "node-gyp rebuild",

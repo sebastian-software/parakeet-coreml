@@ -159,11 +159,11 @@ Models are automatically downloaded on first use:
 # Download all models (~1.5GB)
 npx parakeet-coreml download
 
+# Run benchmark
+npx parakeet-coreml benchmark
+
 # Check status
 npx parakeet-coreml status
-
-# Show cache path
-npx parakeet-coreml path
 
 # Force re-download
 npx parakeet-coreml download --force
