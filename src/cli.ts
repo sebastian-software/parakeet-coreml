@@ -3,7 +3,7 @@
  * CLI for parakeet-coreml
  */
 
-import { readFileSync, existsSync } from "node:fs"
+import { existsSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { execSync } from "node:child_process"
@@ -42,16 +42,26 @@ Options:
 }
 
 /**
- * Load WAV file as Float32Array (16-bit PCM to float)
+ * Load audio file as Float32Array using ffmpeg
  */
-function loadWav(path: string): Float32Array {
-  const buffer = readFileSync(path)
-  const pcm16 = new Int16Array(buffer.buffer, 44) // Skip 44-byte header
-  const samples = new Float32Array(pcm16.length)
-  for (let i = 0; i < pcm16.length; i++) {
-    samples[i] = (pcm16[i] ?? 0) / 32768.0
+function loadAudio(path: string): Float32Array {
+  try {
+    // Convert to raw PCM using ffmpeg
+    const pcmBuffer = execSync(`ffmpeg -i "${path}" -ar 16000 -ac 1 -f s16le -acodec pcm_s16le -`, {
+      encoding: "buffer",
+      stdio: ["pipe", "pipe", "pipe"],
+      maxBuffer: 50 * 1024 * 1024
+    })
+    const pcm16 = new Int16Array(pcmBuffer.buffer, pcmBuffer.byteOffset, pcmBuffer.length / 2)
+    const samples = new Float32Array(pcm16.length)
+    for (let i = 0; i < pcm16.length; i++) {
+      samples[i] = (pcm16[i] ?? 0) / 32768.0
+    }
+    return samples
+  } catch {
+    console.error("ffmpeg is required for benchmark. Install with: brew install ffmpeg")
+    process.exit(1)
   }
-  return samples
 }
 
 /**
@@ -75,9 +85,9 @@ async function runBenchmark(): Promise<void> {
   // Find the benchmark audio file (works from dist/ or when running via npx)
   const __dirname = dirname(fileURLToPath(import.meta.url))
   const possiblePaths = [
-    join(__dirname, "../test/fixtures/brian-full.wav"), // From dist/
-    join(__dirname, "../../test/fixtures/brian-full.wav"), // From node_modules
-    join(process.cwd(), "test/fixtures/brian-full.wav") // From repo root
+    join(__dirname, "../test/fixtures/brian.ogg"), // From dist/
+    join(__dirname, "../../test/fixtures/brian.ogg"), // From node_modules
+    join(process.cwd(), "test/fixtures/brian.ogg") // From repo root
   ]
 
   const audioPath = possiblePaths.find((p) => existsSync(p))
@@ -95,9 +105,9 @@ async function runBenchmark(): Promise<void> {
   console.log(`Chip: ${chip}`)
   console.log(`Node: ${process.version}\n`)
 
-  // Load audio
+  // Load audio (converts OGG to PCM via ffmpeg)
   console.log("Loading audio...")
-  const samples = loadWav(audioPath)
+  const samples = loadAudio(audioPath)
   const audioDuration = samples.length / 16000
 
   console.log(`Audio: ${audioDuration.toFixed(1)}s (${samples.length.toLocaleString()} samples)\n`)
