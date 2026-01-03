@@ -19,7 +19,8 @@
           "sources": [
             "src/asr_engine.mm",
             "src/mel_spectrogram.mm",
-            "src/transducer_decoder.mm"
+            "src/transducer_decoder.mm",
+            "src/vad_engine.mm"
           ],
           "xcode_settings": {
             "GCC_ENABLE_CPP_EXCEPTIONS": "YES",

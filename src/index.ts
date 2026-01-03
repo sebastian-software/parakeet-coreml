@@ -7,22 +7,53 @@
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
 
-import { areModelsDownloaded, downloadModels, getDefaultModelDir } from "./download.js"
+import {
+  areModelsDownloaded,
+  downloadModels,
+  downloadVadModel,
+  getDefaultModelDir,
+  getDefaultVadDir,
+  isVadModelDownloaded
+} from "./download.js"
 
 // Dynamic require for loading native addon (works in both ESM and CJS)
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const bindingsModule = require("bindings") as (name: string) => unknown
 
 /**
+ * Speech segment detected by VAD
+ */
+interface NativeSpeechSegment {
+  startTime: number
+  endTime: number
+}
+
+/**
+ * VAD detection options
+ */
+interface NativeVadOptions {
+  threshold?: number
+  minSilenceDurationMs?: number
+  minSpeechDurationMs?: number
+}
+
+/**
  * Native addon interface
  */
 interface NativeAddon {
+  // ASR functions
   initialize(modelDir: string): boolean
   isInitialized(): boolean
   transcribe(samples: Float32Array, sampleRate?: number): string
   transcribeFile(filePath: string): string
   cleanup(): void
   getVersion(): { addon: string; model: string; coreml: string }
+
+  // VAD functions
+  initializeVad(vadDir: string): boolean
+  isVadInitialized(): boolean
+  detectSpeechSegments(samples: Float32Array, options?: NativeVadOptions): NativeSpeechSegment[]
+  cleanupVad(): void
 }
 
 /* v8 ignore start - platform checks and native addon loading */
@@ -60,6 +91,47 @@ export interface TranscriptionResult {
 }
 
 /**
+ * Speech segment with transcription
+ */
+export interface TranscribedSegment {
+  startTime: number
+  endTime: number
+  text: string
+}
+
+/**
+ * Long audio transcription result
+ */
+export interface LongTranscriptionResult {
+  text: string
+  segments: TranscribedSegment[]
+  durationMs: number
+}
+
+/**
+ * VAD options for speech detection
+ */
+export interface VadOptions {
+  /**
+   * Speech probability threshold (0-1)
+   * @default 0.5
+   */
+  threshold?: number
+
+  /**
+   * Minimum silence duration to split segments (ms)
+   * @default 300
+   */
+  minSilenceDurationMs?: number
+
+  /**
+   * Minimum speech duration to keep (ms)
+   * @default 250
+   */
+  minSpeechDurationMs?: number
+}
+
+/**
  * ASR Engine options
  */
 export interface AsrEngineOptions {
@@ -70,10 +142,22 @@ export interface AsrEngineOptions {
   modelDir?: string
 
   /**
+   * Path to the VAD model directory.
+   * If not provided, uses the default cache directory (~/.cache/parakeet-coreml/vad).
+   */
+  vadDir?: string
+
+  /**
    * Automatically download models if not present.
    * @default true
    */
   autoDownload?: boolean
+
+  /**
+   * Enable VAD for long audio transcription.
+   * @default false
+   */
+  enableVad?: boolean
 }
 
 /**
@@ -81,12 +165,17 @@ export interface AsrEngineOptions {
  */
 export class ParakeetAsrEngine {
   private readonly modelDir: string
+  private readonly vadDir: string
   private readonly autoDownload: boolean
+  private readonly enableVad: boolean
   private initialized = false
+  private vadInitialized = false
 
   constructor(options: AsrEngineOptions = {}) {
     this.modelDir = options.modelDir ? resolve(options.modelDir) : getDefaultModelDir()
+    this.vadDir = options.vadDir ? resolve(options.vadDir) : getDefaultVadDir()
     this.autoDownload = options.autoDownload ?? true
+    this.enableVad = options.enableVad ?? false
   }
 
   /**
@@ -156,7 +245,42 @@ export class ParakeetAsrEngine {
 
     this.initialized = true
 
+    // Initialize VAD if enabled
+    if (this.enableVad) {
+      await this.initializeVad()
+    }
+
     /* v8 ignore stop */
+  }
+
+  /**
+   * Initialize VAD engine for long audio transcription.
+   * Called automatically if enableVad is true.
+   */
+  async initializeVad(): Promise<void> {
+    if (this.vadInitialized) {
+      return
+    }
+
+    // Download VAD model if needed
+    if (!isVadModelDownloaded(this.vadDir)) {
+      if (this.autoDownload) {
+        console.log("VAD model not found. Downloading...")
+        await downloadVadModel({ vadDir: this.vadDir })
+      } else {
+        throw new Error(
+          `VAD model not found in ${this.vadDir}. ` +
+            `Run "npx parakeet-coreml download-vad" or enable autoDownload.`
+        )
+      }
+    }
+
+    const success = getAddon().initializeVad(this.vadDir)
+    if (!success) {
+      throw new Error("Failed to initialize VAD engine")
+    }
+
+    this.vadInitialized = true
   }
 
   isReady(): boolean {
@@ -164,6 +288,13 @@ export class ParakeetAsrEngine {
       return false
     }
     return getAddon().isInitialized()
+  }
+
+  isVadReady(): boolean {
+    if (!this.vadInitialized) {
+      return false
+    }
+    return getAddon().isVadInitialized()
   }
 
   /* v8 ignore start - native addon calls, tested via E2E */
@@ -191,7 +322,88 @@ export class ParakeetAsrEngine {
     return { text, durationMs }
   }
 
+  /**
+   * Transcribe long audio using VAD-based chunking.
+   * Automatically splits audio at speech boundaries and transcribes each segment.
+   *
+   * @param samples Audio samples (16kHz, mono, Float32Array)
+   * @param options VAD options for speech detection
+   * @returns Transcription with segments
+   */
+  transcribeLong(samples: Float32Array, options: VadOptions = {}): LongTranscriptionResult {
+    if (!this.initialized) {
+      throw new Error("ASR engine not initialized. Call initialize() first.")
+    }
+    if (!this.vadInitialized) {
+      throw new Error(
+        "VAD engine not initialized. Call initializeVad() first or set enableVad: true."
+      )
+    }
+
+    const startTime = performance.now()
+    const sampleRate = 16000
+    const maxChunkSamples = 15 * sampleRate // 15 seconds max
+
+    // Detect speech segments using VAD
+    const speechSegments = getAddon().detectSpeechSegments(samples, {
+      threshold: options.threshold ?? 0.5,
+      minSilenceDurationMs: options.minSilenceDurationMs ?? 300,
+      minSpeechDurationMs: options.minSpeechDurationMs ?? 250
+    })
+
+    const transcribedSegments: TranscribedSegment[] = []
+    const textParts: string[] = []
+
+    for (const segment of speechSegments) {
+      const startSample = Math.floor(segment.startTime * sampleRate)
+      const endSample = Math.min(Math.floor(segment.endTime * sampleRate), samples.length)
+      const segmentSamples = samples.slice(startSample, endSample)
+
+      // If segment is longer than 15s, split into chunks
+      if (segmentSamples.length > maxChunkSamples) {
+        let offset = 0
+        while (offset < segmentSamples.length) {
+          const chunkEnd = Math.min(offset + maxChunkSamples, segmentSamples.length)
+          const chunk = segmentSamples.slice(offset, chunkEnd)
+
+          const text = getAddon().transcribe(chunk, sampleRate)
+          const chunkStartTime = segment.startTime + offset / sampleRate
+          const chunkEndTime = segment.startTime + chunkEnd / sampleRate
+
+          transcribedSegments.push({
+            startTime: chunkStartTime,
+            endTime: chunkEndTime,
+            text
+          })
+          textParts.push(text)
+
+          offset += maxChunkSamples
+        }
+      } else {
+        const text = getAddon().transcribe(segmentSamples, sampleRate)
+        transcribedSegments.push({
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+          text
+        })
+        textParts.push(text)
+      }
+    }
+
+    const durationMs = performance.now() - startTime
+
+    return {
+      text: textParts.join(" "),
+      segments: transcribedSegments,
+      durationMs
+    }
+  }
+
   cleanup(): void {
+    if (this.vadInitialized) {
+      getAddon().cleanupVad()
+      this.vadInitialized = false
+    }
     if (this.initialized) {
       getAddon().cleanup()
       this.initialized = false
@@ -206,7 +418,14 @@ export class ParakeetAsrEngine {
 }
 
 // Re-export download utilities
-export { areModelsDownloaded, downloadModels, getDefaultModelDir }
+export {
+  areModelsDownloaded,
+  downloadModels,
+  downloadVadModel,
+  getDefaultModelDir,
+  getDefaultVadDir,
+  isVadModelDownloaded
+} from "./download.js"
 
 export function isAvailable(): boolean {
   return process.platform === "darwin"

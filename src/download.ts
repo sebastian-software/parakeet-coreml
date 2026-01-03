@@ -6,15 +6,29 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 
-const HUGGINGFACE_REPO = "FluidInference/parakeet-tdt-0.6b-v3-coreml"
-const HUGGINGFACE_API = `https://huggingface.co/api/models/${HUGGINGFACE_REPO}`
-const HUGGINGFACE_DOWNLOAD = `https://huggingface.co/${HUGGINGFACE_REPO}/resolve/main`
+// Parakeet ASR models
+const PARAKEET_REPO = "FluidInference/parakeet-tdt-0.6b-v3-coreml"
+const PARAKEET_API = `https://huggingface.co/api/models/${PARAKEET_REPO}`
+const PARAKEET_DOWNLOAD = `https://huggingface.co/${PARAKEET_REPO}/resolve/main`
+
+// Silero VAD model (CoreML version)
+const VAD_REPO = "FluidInference/silero-vad-coreml"
+const VAD_API = `https://huggingface.co/api/models/${VAD_REPO}`
+const VAD_DOWNLOAD = `https://huggingface.co/${VAD_REPO}/resolve/main`
+const VAD_MODEL_NAME = "silero-vad-unified-v6.0.0.mlmodelc"
 
 /**
  * Default model directory in user's cache
  */
 export function getDefaultModelDir(): string {
   return join(homedir(), ".cache", "parakeet-coreml", "models")
+}
+
+/**
+ * Default VAD model directory
+ */
+export function getDefaultVadDir(): string {
+  return join(homedir(), ".cache", "parakeet-coreml", "vad")
 }
 
 /**
@@ -37,6 +51,15 @@ export function areModelsDownloaded(modelDir?: string): boolean {
   const hasVocab = vocabOptions.some((f) => existsSync(join(dir, f)))
 
   return hasEncoder && hasDecoder && hasJoint && hasVocab
+}
+
+/**
+ * Check if VAD model is already downloaded
+ */
+export function isVadModelDownloaded(vadDir?: string): boolean {
+  const dir = vadDir ?? getDefaultVadDir()
+  const modelPath = join(dir, VAD_MODEL_NAME)
+  return existsSync(modelPath)
 }
 
 interface TreeEntry {
@@ -67,8 +90,8 @@ export interface DownloadOptions {
 /**
  * Fetch file tree from Hugging Face
  */
-async function fetchFileTree(path = ""): Promise<TreeEntry[]> {
-  const url = `${HUGGINGFACE_API}/tree/main${path ? `/${path}` : ""}`
+async function fetchFileTree(apiBase: string, path = ""): Promise<TreeEntry[]> {
+  const url = `${apiBase}/tree/main${path ? `/${path}` : ""}`
   const response = await fetch(url)
 
   if (!response.ok) {
@@ -81,8 +104,8 @@ async function fetchFileTree(path = ""): Promise<TreeEntry[]> {
 /**
  * Recursively get all files in a directory
  */
-async function getAllFiles(path = ""): Promise<TreeEntry[]> {
-  const entries = await fetchFileTree(path)
+async function getAllFiles(apiBase: string, path = ""): Promise<TreeEntry[]> {
+  const entries = await fetchFileTree(apiBase, path)
   const files: TreeEntry[] = []
 
   for (const entry of entries) {
@@ -90,7 +113,7 @@ async function getAllFiles(path = ""): Promise<TreeEntry[]> {
       files.push(entry)
     } else {
       // entry.type === "directory"
-      const subFiles = await getAllFiles(entry.path)
+      const subFiles = await getAllFiles(apiBase, entry.path)
       files.push(...subFiles)
     }
   }
@@ -102,10 +125,14 @@ async function getAllFiles(path = ""): Promise<TreeEntry[]> {
 
 /* v8 ignore start - network I/O */
 /**
- * Download a single file
+ * Download a single file from Hugging Face
  */
-async function downloadFile(filePath: string, destDir: string): Promise<void> {
-  const url = `${HUGGINGFACE_DOWNLOAD}/${filePath}`
+async function downloadFile(
+  downloadBase: string,
+  filePath: string,
+  destDir: string
+): Promise<void> {
+  const url = `${downloadBase}/${filePath}`
   const destPath = join(destDir, filePath)
   const destDirPath = dirname(destPath)
 
@@ -143,7 +170,7 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
 
   /* v8 ignore start - network download loop */
   console.log("Fetching model file list from Hugging Face...")
-  const files = await getAllFiles()
+  const files = await getAllFiles(PARAKEET_API)
 
   // Filter to only include required model files
   const modelFiles = files.filter(
@@ -167,7 +194,7 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
       continue
     }
 
-    await downloadFile(file.path, modelDir)
+    await downloadFile(PARAKEET_DOWNLOAD, file.path, modelDir)
 
     const current = i + 1
     const percent = Math.round((current / totalCount) * 100)
@@ -194,6 +221,77 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
 
   console.log("\n✓ Models downloaded successfully!")
   return modelDir
+}
+
+export interface VadDownloadOptions {
+  /** Target directory for VAD model (default: ~/.cache/parakeet-coreml/vad) */
+  vadDir?: string
+
+  /** Progress callback */
+  onProgress?: (progress: DownloadProgress) => void
+
+  /** Force re-download even if model exists */
+  force?: boolean
+}
+
+/**
+ * Download Silero VAD CoreML model from Hugging Face
+ */
+export async function downloadVadModel(options: VadDownloadOptions = {}): Promise<string> {
+  const vadDir = options.vadDir ?? getDefaultVadDir()
+
+  if (!options.force && isVadModelDownloaded(vadDir)) {
+    return vadDir
+  }
+
+  // Clean up partial downloads
+  /* v8 ignore start - cleanup logic */
+  const modelPath = join(vadDir, VAD_MODEL_NAME)
+  if (existsSync(modelPath)) {
+    rmSync(modelPath, { recursive: true })
+  }
+  mkdirSync(vadDir, { recursive: true })
+
+  /* v8 ignore stop */
+
+  /* v8 ignore start - network download loop */
+  console.log("Fetching VAD model file list from Hugging Face...")
+  const files = await getAllFiles(VAD_API, VAD_MODEL_NAME)
+
+  const totalSize = files.reduce((acc, f) => acc + (f.size ?? 0), 0)
+  const totalCount = files.length
+
+  console.log(`Downloading VAD model (${String(totalCount)} files, ${formatBytes(totalSize)})...`)
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (!file) {
+      continue
+    }
+
+    await downloadFile(VAD_DOWNLOAD, file.path, vadDir)
+
+    const current = i + 1
+    const percent = Math.round((current / totalCount) * 100)
+
+    if (options.onProgress) {
+      options.onProgress({
+        file: file.path,
+        current,
+        total: totalCount,
+        percent
+      })
+    }
+
+    process.stdout.write(
+      `\rProgress: ${String(percent)}% (${String(current)}/${String(totalCount)} files)`
+    )
+  }
+
+  /* v8 ignore stop */
+
+  console.log("\n✓ VAD model downloaded successfully!")
+  return vadDir
 }
 
 /**
