@@ -1,30 +1,77 @@
 # parakeet-coreml
 
-[![CI](https://github.com/sebastian-software/parakeet-coreml/actions/workflows/ci.yml/badge.svg)](https://github.com/sebastian-software/parakeet-coreml/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/parakeet-coreml.svg)](https://www.npmjs.com/package/parakeet-coreml)
-[![npm downloads](https://img.shields.io/npm/dm/parakeet-coreml.svg)](https://www.npmjs.com/package/parakeet-coreml)
-[![codecov](https://codecov.io/gh/sebastian-software/parakeet-coreml/branch/main/graph/badge.svg)](https://codecov.io/gh/sebastian-software/parakeet-coreml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <img src="logo.svg" alt="parakeet-coreml" width="128" height="128">
+</p>
 
-NVIDIA Parakeet TDT ASR for Node.js with **CoreML/ANE acceleration** on Apple Silicon.
+<p align="center">
+  <strong>Production-ready speech recognition for Node.js on Apple Silicon</strong>
+</p>
 
-Fast, accurate, and fully offline speech recognition using the [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) model.
+<p align="center">
+  <a href="https://github.com/sebastian-software/parakeet-coreml/actions/workflows/ci.yml"><img src="https://github.com/sebastian-software/parakeet-coreml/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/parakeet-coreml"><img src="https://img.shields.io/npm/v/parakeet-coreml.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/parakeet-coreml"><img src="https://img.shields.io/npm/dm/parakeet-coreml.svg" alt="npm downloads"></a>
+  <a href="https://codecov.io/gh/sebastian-software/parakeet-coreml"><img src="https://codecov.io/gh/sebastian-software/parakeet-coreml/branch/main/graph/badge.svg" alt="codecov"></a>
+  <br>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-20+-green.svg" alt="Node.js"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+Powered by NVIDIA's Parakeet model running on Apple's Neural Engine via CoreML.
+
+## Why parakeet-coreml?
+
+Modern Macs contain a powerful Neural Engine (ANE) – dedicated silicon for machine learning that often sits idle. This library puts it to work for speech recognition, delivering **real-time transcription without cloud dependencies**.
+
+### The Problem with Alternatives
+
+| Approach                             | Drawbacks                                                        |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| **Cloud APIs** (OpenAI, Google, AWS) | Privacy concerns, ongoing costs, latency, requires internet      |
+| **Whisper.cpp**                      | CPU-bound, significantly slower on Apple Silicon                 |
+| **Python solutions**                 | Requires Python runtime, complex deployment, subprocess overhead |
+| **Electron + subprocess**            | Memory overhead, IPC latency, complex architecture               |
+
+### Our Solution
+
+parakeet-coreml is a **native Node.js addon** that directly interfaces with CoreML. No Python. No subprocess. No cloud. Just fast, private speech recognition leveraging the full power of Apple Silicon.
 
 ## Features
 
-- 🚀 **~110x real-time** - Transcribe 1 minute of audio in ~0.5 seconds (M4 Pro)
-- 🍎 **Apple Neural Engine** - Hardware-accelerated via CoreML
-- 🌍 **Multilingual** - Major European languages supported
-- 🔒 **Fully offline** - No data leaves your device
-- 📦 **Native Node.js addon** - No Python, no subprocess
-- ⬇️ **Automatic model download** - Models are fetched on first use
+- 🚀 **~110x real-time** – Transcribe 1 minute of audio in ~0.5 seconds (M4 Pro)
+- 🍎 **Neural Engine Acceleration** – Runs on Apple's dedicated ML silicon, not CPU
+- 🔒 **Fully Offline** – All processing happens locally. Your audio never leaves your device.
+- 📦 **Zero Runtime Dependencies** – No Python, no subprocess, no external services
+- 🌍 **Multilingual** – English and major European languages (German, French, Spanish, Italian, Portuguese, Dutch, Polish, Russian, Ukrainian, and more)
+- ⬇️ **Automatic Setup** – Models download on first use. Just `npm install` and go.
+
+## Performance
+
+The Apple Neural Engine transforms speech recognition performance. While CPU-based solutions struggle to keep up with real-time audio, ANE acceleration delivers processing speeds that open new possibilities:
+
+| Chip   | Speed             | Real-World Impact                         |
+| ------ | ----------------- | ----------------------------------------- |
+| M4 Pro | ~110x real-time   | 1-hour podcast transcribed in ~30 seconds |
+| M3     | ~90x real-time    | Live transcription with minimal latency   |
+| M1     | ~50-70x real-time | Comfortable batch processing              |
+
+These benchmarks use the [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) model – NVIDIA's state-of-the-art Transducer-based ASR achieving near-human accuracy.
+
+## Use Cases
+
+- **Meeting transcription** – Process recordings without uploading to third-party services
+- **Podcast production** – Generate transcripts for show notes and accessibility
+- **Voice interfaces** – Build voice-controlled applications with predictable latency
+- **Content indexing** – Make audio/video content searchable
+- **Accessibility tools** – Real-time captioning for the hearing impaired
+- **Privacy-sensitive applications** – Healthcare, legal, finance – where data cannot leave the device
 
 ## Requirements
 
-- macOS 14.0+
-- Apple Silicon (M1/M2/M3/M4)
+- macOS 14.0+ (Sonoma or later)
+- Apple Silicon (M1, M2, M3, M4 – any variant)
 - Node.js 20+
 
 ## Installation
@@ -33,27 +80,66 @@ Fast, accurate, and fully offline speech recognition using the [Parakeet TDT 0.6
 npm install parakeet-coreml
 ```
 
+The native addon compiles during installation. Xcode Command Line Tools are required.
+
 ## Quick Start
 
 ```typescript
 import { ParakeetAsrEngine } from "parakeet-coreml"
 
-// Create engine (models download automatically on first use)
 const engine = new ParakeetAsrEngine()
 
-// Initialize (downloads ~1.5GB models if not cached)
+// First run downloads ~1.5GB of models (cached for future use)
 await engine.initialize()
 
-// Transcribe audio (16kHz, mono, Float32)
+// Transcribe audio (16kHz, mono, Float32Array)
 const result = engine.transcribe(audioSamples, 16000)
 
 console.log(result.text)
 // "Hello, this is a test transcription."
 
+console.log(`Processed in ${result.durationMs}ms`)
+
 engine.cleanup()
 ```
 
-That's it! No manual model download required.
+That's it. No API keys. No configuration. No internet required after the initial model download.
+
+## Audio Format
+
+The engine expects raw audio samples in the following format:
+
+| Property    | Requirement                                   |
+| ----------- | --------------------------------------------- |
+| Sample Rate | **16,000 Hz** (16 kHz)                        |
+| Channels    | **Mono** (single channel)                     |
+| Format      | **Float32Array** with values between -1.0–1.0 |
+| Duration    | Up to **15 seconds** per call                 |
+
+For longer audio, split into chunks and call `transcribe()` for each segment.
+
+### Converting Audio Files
+
+This library processes raw PCM samples, not audio files directly. You'll need to decode your audio files before transcription. Common approaches:
+
+- **[ffmpeg](https://ffmpeg.org/)** – Convert any audio/video format to raw PCM
+- **[node-wav](https://www.npmjs.com/package/node-wav)** – Parse WAV files in Node.js
+- **Web Audio API** – Decode audio in browser/Electron environments
+
+Example with ffmpeg (CLI):
+
+```bash
+ffmpeg -i input.mp3 -ar 16000 -ac 1 -f f32le output.pcm
+```
+
+Then load the raw PCM file:
+
+```typescript
+import { readFileSync } from "fs"
+
+const buffer = readFileSync("output.pcm")
+const samples = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length / 4)
+```
 
 ## Model Management
 
@@ -62,41 +148,39 @@ Models are automatically downloaded to `~/.cache/parakeet-coreml/models` on firs
 ### CLI Commands
 
 ```bash
-# Download models manually (optional)
+# Pre-download models (useful for CI/deployment)
 npx parakeet-coreml download
 
-# Check download status
+# Check if models are present
 npx parakeet-coreml status
 
-# Show model directory path
+# Show cache location
 npx parakeet-coreml path
 
-# Force re-download
+# Force fresh download
 npx parakeet-coreml download --force
 ```
 
-### Custom Model Directory
+### Custom Configuration
 
 ```typescript
+// Use a custom model directory
 const engine = new ParakeetAsrEngine({
-  modelDir: "./my-models", // Custom path
-  autoDownload: true // Download to custom path if missing
+  modelDir: "./my-models",
+  autoDownload: true
+})
+
+// Disable auto-download (for controlled environments)
+const engine = new ParakeetAsrEngine({
+  autoDownload: false // Will throw if models not present
 })
 ```
 
-### Disable Auto-Download
-
-For CI/CD or controlled environments:
-
-```typescript
-const engine = new ParakeetAsrEngine({
-  autoDownload: false // Fail if models not present
-})
-```
-
-## API
+## API Reference
 
 ### `ParakeetAsrEngine`
+
+The main class for speech recognition.
 
 ```typescript
 new ParakeetAsrEngine(options?: AsrEngineOptions)
@@ -111,51 +195,49 @@ new ParakeetAsrEngine(options?: AsrEngineOptions)
 
 #### Methods
 
-| Method                             | Description                       |
-| ---------------------------------- | --------------------------------- |
-| `initialize()`                     | Load models (downloads if needed) |
-| `isReady()`                        | Check if ready                    |
-| `transcribe(samples, sampleRate?)` | Transcribe audio                  |
-| `transcribeFile(filePath)`         | Transcribe file                   |
-| `cleanup()`                        | Release resources                 |
-| `getVersion()`                     | Get version info                  |
+| Method                             | Description                          |
+| ---------------------------------- | ------------------------------------ |
+| `initialize()`                     | Load models (downloads if needed)    |
+| `isReady()`                        | Check if engine is initialized       |
+| `transcribe(samples, sampleRate?)` | Transcribe Float32Array audio (≤15s) |
+| `cleanup()`                        | Release native resources             |
+| `getVersion()`                     | Get version information              |
 
 ### `TranscriptionResult`
 
 ```typescript
 interface TranscriptionResult {
-  text: string // Transcribed text
-  durationMs: number // Processing time
+  text: string // The transcribed text
+  durationMs: number // Processing time in milliseconds
 }
 ```
 
 ### Helper Functions
 
-| Function                    | Description                     |
-| --------------------------- | ------------------------------- |
-| `isAvailable()`             | Check if platform is supported  |
-| `getDefaultModelDir()`      | Get default model cache path    |
-| `areModelsDownloaded(dir?)` | Check if models exist           |
-| `downloadModels(options?)`  | Manually trigger model download |
-
-## Performance
-
-| Device | Speed             | Notes           |
-| ------ | ----------------- | --------------- |
-| M4 Pro | ~110x real-time   | ANE accelerated |
-| M1     | ~50-70x real-time | ANE accelerated |
+| Function                    | Description                            |
+| --------------------------- | -------------------------------------- |
+| `isAvailable()`             | Check if running on supported platform |
+| `getDefaultModelDir()`      | Get default model cache path           |
+| `areModelsDownloaded(dir?)` | Check if models are present            |
+| `downloadModels(options?)`  | Manually trigger model download        |
 
 ## Architecture
 
 ```
-┌─────────────────┐
-│   Node.js API   │  TypeScript
-├─────────────────┤
-│  Native Addon   │  N-API + Objective-C++
-├─────────────────┤
-│    CoreML       │  Apple Neural Engine
-└─────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Your Node.js App                     │
+├─────────────────────────────────────────────────────────┤
+│                  parakeet-coreml API                    │  TypeScript
+├─────────────────────────────────────────────────────────┤
+│                    Native Addon                         │  N-API + Objective-C++
+├─────────────────────────────────────────────────────────┤
+│                      CoreML                             │  Apple Framework
+├─────────────────────────────────────────────────────────┤
+│                 Apple Neural Engine                     │  Dedicated ML Silicon
+└─────────────────────────────────────────────────────────┘
 ```
+
+The library bridges Node.js directly to Apple's CoreML framework via a native N-API addon written in Objective-C++. This eliminates the overhead of subprocess communication or Python interop, resulting in minimal latency and efficient memory usage.
 
 ## Contributing
 
@@ -167,9 +249,9 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 
-MIT - see [LICENSE](LICENSE) for details.
+MIT – see [LICENSE](LICENSE) for details.
 
 ## Credits
 
-- [NVIDIA Parakeet TDT v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) - Base model
-- [FluidInference](https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml) - CoreML conversion
+- [NVIDIA Parakeet TDT v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) – The underlying ASR model
+- [FluidInference](https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml) – CoreML model conversion
