@@ -1,0 +1,71 @@
+{
+  "name": "parakeet-coreml",
+  "version": "0.1.0",
+  "description": "NVIDIA Parakeet TDT ASR for Node.js with CoreML/ANE acceleration on Apple Silicon",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "build",
+    "src/*.mm",
+    "src/*.h",
+    "binding.gyp"
+  ],
+  "scripts": {
+    "build:native": "node-gyp rebuild",
+    "build:ts": "tsup",
+    "build": "npm run build:native && npm run build:ts",
+    "clean": "node-gyp clean && rm -rf dist",
+    "test": "node test.mjs",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "asr",
+    "speech-recognition",
+    "transcription",
+    "parakeet",
+    "nvidia",
+    "coreml",
+    "apple-silicon",
+    "neural-engine",
+    "macos"
+  ],
+  "author": "Sebastian Werner",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastian-software/parakeet-coreml.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sebastian-software/parakeet-coreml/issues"
+  },
+  "homepage": "https://github.com/sebastian-software/parakeet-coreml#readme",
+  "dependencies": {
+    "bindings": "^1.5.0"
+  },
+  "devDependencies": {
+    "node-addon-api": "^8.3.1",
+    "node-gyp": "^11.1.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "MIT"
+}

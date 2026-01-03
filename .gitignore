@@ -1,0 +1,20 @@
+# Build outputs
+build/
+dist/
+prebuilds/
+
+# Dependencies
+node_modules/
+
+# Models (too large for git)
+models/
+*.mlmodelc/
+
+# OS files
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
