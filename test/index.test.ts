@@ -79,6 +79,19 @@ describe("index", () => {
         const engine = new ParakeetAsrEngine()
         expect(() => engine.getVersion()).toThrow("only supported on macOS")
       })
+
+      it("initialize throws on non-macOS when models missing", async () => {
+        const engine = new ParakeetAsrEngine({
+          modelDir: "/non/existent/path",
+          autoDownload: false
+        })
+        await expect(engine.initialize()).rejects.toThrow()
+      })
     }
+
+    it("transcribeFile throws before initialization", () => {
+      const engine = new ParakeetAsrEngine()
+      expect(() => engine.transcribeFile("/some/file.wav")).toThrow("not initialized")
+    })
   })
 })

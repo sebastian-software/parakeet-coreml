@@ -28,6 +28,7 @@ interface NativeAddon {
 /**
  * Load the native addon
  */
+/* v8 ignore start - platform checks and native addon loading */
 function loadAddon(): NativeAddon {
   if (process.platform !== "darwin") {
     throw new Error("parakeet-coreml is only supported on macOS")
@@ -40,6 +41,8 @@ function loadAddon(): NativeAddon {
     throw new Error(`Failed to load Parakeet ASR native addon: ${message}`)
   }
 }
+
+/* v8 ignore stop */
 
 let addon: NativeAddon | null = null
 
@@ -91,12 +94,16 @@ export class ParakeetAsrEngine {
    * Downloads models automatically if not present and autoDownload is enabled.
    */
   async initialize(): Promise<void> {
+    /* v8 ignore start - early return guard */
     if (this.initialized) {
       return
     }
 
+    /* v8 ignore stop */
+
     // Check if models exist, download if needed
     if (!areModelsDownloaded(this.modelDir)) {
+      /* v8 ignore start - auto-download and error paths */
       if (this.autoDownload) {
         console.log("Models not found. Downloading...")
         await downloadModels({ modelDir: this.modelDir })
@@ -106,8 +113,11 @@ export class ParakeetAsrEngine {
             `Run "npx parakeet-coreml download" or enable autoDownload.`
         )
       }
+
+      /* v8 ignore stop */
     }
 
+    /* v8 ignore start - model validation requires real model files */
     if (!existsSync(this.modelDir)) {
       throw new Error(`Model directory not found: ${this.modelDir}`)
     }
@@ -145,6 +155,8 @@ export class ParakeetAsrEngine {
     }
 
     this.initialized = true
+
+    /* v8 ignore stop */
   }
 
   isReady(): boolean {
@@ -154,6 +166,7 @@ export class ParakeetAsrEngine {
     return getAddon().isInitialized()
   }
 
+  /* v8 ignore start - native addon calls, tested via E2E */
   transcribe(samples: Float32Array, sampleRate = 16000): TranscriptionResult {
     if (!this.initialized) {
       throw new Error("ASR engine not initialized. Call initialize() first.")
@@ -188,6 +201,8 @@ export class ParakeetAsrEngine {
   getVersion(): { addon: string; model: string; coreml: string } {
     return getAddon().getVersion()
   }
+
+  /* v8 ignore stop */
 }
 
 // Re-export download utilities

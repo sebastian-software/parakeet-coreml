@@ -3,7 +3,13 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { areModelsDownloaded, downloadModels, getDefaultModelDir } from "../src/download.js"
+import {
+  areModelsDownloaded,
+  convertVocabToTokens,
+  downloadModels,
+  formatBytes,
+  getDefaultModelDir
+} from "../src/download.js"
 
 describe("download", () => {
   describe("getDefaultModelDir", () => {
@@ -145,6 +151,93 @@ describe("download", () => {
 
       // Should complete without errors (empty file list = no progress calls)
       expect(Array.isArray(progressCalls)).toBe(true)
+    })
+  })
+
+  describe("convertVocabToTokens", () => {
+    const testDir = join(tmpdir(), "parakeet-vocab-test-" + Date.now())
+
+    beforeEach(() => {
+      mkdirSync(testDir, { recursive: true })
+    })
+
+    afterEach(() => {
+      if (existsSync(testDir)) {
+        rmSync(testDir, { recursive: true })
+      }
+    })
+
+    it("skips if tokens.txt already exists", () => {
+      writeFileSync(join(testDir, "tokens.txt"), "existing")
+      convertVocabToTokens(testDir)
+      // Should not modify existing file
+      const content = require("node:fs").readFileSync(join(testDir, "tokens.txt"), "utf-8")
+      expect(content).toBe("existing")
+    })
+
+    it("converts parakeet_vocab.json to tokens.txt", () => {
+      const vocab = { "0": "hello", "1": "world", "2": "test" }
+      writeFileSync(join(testDir, "parakeet_vocab.json"), JSON.stringify(vocab))
+
+      convertVocabToTokens(testDir)
+
+      const tokens = require("node:fs").readFileSync(join(testDir, "tokens.txt"), "utf-8")
+      expect(tokens).toBe("hello\nworld\ntest")
+    })
+
+    it("converts parakeet_v3_vocab.json to tokens.txt", () => {
+      const vocab = { "0": "a", "1": "b" }
+      writeFileSync(join(testDir, "parakeet_v3_vocab.json"), JSON.stringify(vocab))
+
+      convertVocabToTokens(testDir)
+
+      const tokens = require("node:fs").readFileSync(join(testDir, "tokens.txt"), "utf-8")
+      expect(tokens).toBe("a\nb")
+    })
+
+    it("handles sparse vocab indices", () => {
+      const vocab = { "0": "first", "5": "sixth" }
+      writeFileSync(join(testDir, "parakeet_vocab.json"), JSON.stringify(vocab))
+
+      convertVocabToTokens(testDir)
+
+      const tokens = require("node:fs").readFileSync(join(testDir, "tokens.txt"), "utf-8")
+      expect(tokens).toBe("first\n\n\n\n\nsixth")
+    })
+
+    it("warns when no vocab file found", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+      convertVocabToTokens(testDir)
+
+      expect(warnSpy).toHaveBeenCalledWith("Warning: No vocabulary file found to convert")
+      warnSpy.mockRestore()
+    })
+  })
+
+  describe("formatBytes", () => {
+    it("formats bytes", () => {
+      expect(formatBytes(0)).toBe("0 B")
+      expect(formatBytes(100)).toBe("100 B")
+      expect(formatBytes(1023)).toBe("1023 B")
+    })
+
+    it("formats kilobytes", () => {
+      expect(formatBytes(1024)).toBe("1.0 KB")
+      expect(formatBytes(1536)).toBe("1.5 KB")
+      expect(formatBytes(10240)).toBe("10.0 KB")
+    })
+
+    it("formats megabytes", () => {
+      expect(formatBytes(1024 * 1024)).toBe("1.0 MB")
+      expect(formatBytes(1024 * 1024 * 5.5)).toBe("5.5 MB")
+      expect(formatBytes(1024 * 1024 * 100)).toBe("100.0 MB")
+    })
+
+    it("formats gigabytes", () => {
+      expect(formatBytes(1024 * 1024 * 1024)).toBe("1.00 GB")
+      expect(formatBytes(1024 * 1024 * 1024 * 1.5)).toBe("1.50 GB")
+      expect(formatBytes(1024 * 1024 * 1024 * 10)).toBe("10.00 GB")
     })
   })
 })

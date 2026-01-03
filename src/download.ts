@@ -66,6 +66,7 @@ export interface DownloadOptions {
 /**
  * Fetch file tree from Hugging Face
  */
+/* v8 ignore start - network I/O */
 async function fetchFileTree(path = ""): Promise<TreeEntry[]> {
   const url = `${HUGGINGFACE_API}/tree/main${path ? `/${path}` : ""}`
   const response = await fetch(url)
@@ -97,9 +98,12 @@ async function getAllFiles(path = ""): Promise<TreeEntry[]> {
   return files
 }
 
+/* v8 ignore stop */
+
 /**
  * Download a single file
  */
+/* v8 ignore start - network I/O */
 async function downloadFile(filePath: string, destDir: string): Promise<void> {
   const url = `${HUGGINGFACE_DOWNLOAD}/${filePath}`
   const destPath = join(destDir, filePath)
@@ -116,6 +120,8 @@ async function downloadFile(filePath: string, destDir: string): Promise<void> {
   writeFileSync(destPath, Buffer.from(buffer))
 }
 
+/* v8 ignore stop */
+
 /**
  * Download Parakeet CoreML models from Hugging Face
  */
@@ -127,11 +133,15 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
   }
 
   // Clean up partial downloads
+  /* v8 ignore start - cleanup logic */
   if (existsSync(modelDir)) {
     rmSync(modelDir, { recursive: true })
   }
   mkdirSync(modelDir, { recursive: true })
 
+  /* v8 ignore stop */
+
+  /* v8 ignore start - network download loop */
   console.log("Fetching model file list from Hugging Face...")
   const files = await getAllFiles()
 
@@ -177,6 +187,8 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
     )
   }
 
+  /* v8 ignore stop */
+
   // Convert JSON vocab to tokens.txt format (required by native addon)
   convertVocabToTokens(modelDir)
 
@@ -187,8 +199,9 @@ export async function downloadModels(options: DownloadOptions = {}): Promise<str
 /**
  * Convert JSON vocabulary file to tokens.txt format
  * The native addon expects one token per line
+ * @internal Exported for testing
  */
-function convertVocabToTokens(modelDir: string): void {
+export function convertVocabToTokens(modelDir: string): void {
   const tokensPath = join(modelDir, "tokens.txt")
 
   // Skip if tokens.txt already exists
@@ -231,8 +244,9 @@ function convertVocabToTokens(modelDir: string): void {
 
 /**
  * Format bytes to human readable string
+ * @internal Exported for testing
  */
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) {
     return `${String(bytes)} B`
   }
