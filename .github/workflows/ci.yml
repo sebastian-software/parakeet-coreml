@@ -95,3 +95,11 @@ jobs:
         run: |
           ls -la build/Release/
           ls -la dist/
+
+      - name: Run E2E smoke test (addon loading)
+        run: |
+          node -e "
+            const { isAvailable } = require('./dist/index.cjs');
+            console.log('Platform available:', isAvailable());
+            if (!isAvailable()) process.exit(1);
+          "
