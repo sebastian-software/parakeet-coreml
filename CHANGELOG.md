@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.1](https://github.com/sebastian-software/parakeet-coreml/compare/v1.0.0...v1.0.1) (2026-01-03)
+
+### Bug Fixes
+
+- place v8 ignore comments before JSDoc to preserve association ([9045866](https://github.com/sebastian-software/parakeet-coreml/commit/90458668f8917e998ee05daf4ceae3031b71fa29))
+
 # [1.0.0](https://github.com/sebastian-software/parakeet-coreml/compare/v0.3.0...v1.0.0) (2026-01-03)
 
 ### Bug Fixes
