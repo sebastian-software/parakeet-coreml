@@ -1,0 +1,116 @@
+# parakeet-coreml Project Rules
+
+## Package Manager
+
+- **pnpm** is the package manager for this project
+- Use `pnpm install`, `pnpm add`, `pnpm run <script>`
+- Lock file: `pnpm-lock.yaml`
+
+## Code Style & Formatting
+
+### Prettier
+
+- Config: `.prettierrc`
+- No semicolons (`semi: false`)
+- Double quotes (`singleQuote: false`)
+- Line width: 100 characters
+- No trailing commas
+- Run: `pnpm format` (write) or `pnpm format:check` (verify)
+
+### ESLint
+
+- Config: `eslint.config.js` (flat config format, ESLint v9+)
+- TypeScript type-aware rules enabled (`strictTypeChecked`, `stylisticTypeChecked`)
+- Run: `pnpm lint` or `pnpm lint:fix`
+
+### TypeScript
+
+- Config: `tsconfig.json`
+- Strict mode enabled
+- Target: ES2022
+- Module: NodeNext
+- Run: `pnpm typecheck`
+
+## Git Hooks (Husky)
+
+- **pre-commit**: Runs `lint-staged` (Prettier on staged files)
+- **pre-push**: Runs `pnpm lint` and `pnpm typecheck`
+- **commit-msg**: Validates commit messages with Commitlint
+
+## Commit Convention
+
+- **Conventional Commits** enforced via Commitlint
+- Config: `commitlint.config.js` (extends `@commitlint/config-conventional`)
+- Format: `<type>(<scope>): <description>`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+
+## Testing
+
+### Vitest
+
+- Config: `vitest.config.ts`
+- Test files: `test/**/*.test.ts`
+- Coverage: V8 provider
+- Commands:
+  - `pnpm test` – Run all tests
+  - `pnpm test:watch` – Watch mode
+  - `pnpm test:coverage` – With coverage report
+  - `pnpm test:e2e` – E2E tests only (requires macOS + models)
+
+## Release Process
+
+### release-it
+
+- Config: `.release-it.json`
+- Generates changelog from conventional commits
+- Creates GitHub releases
+- Publishes to npm
+- Run: `pnpm release`
+- Dry run: `pnpm release -- --dry-run`
+
+## Build
+
+### Native Addon (node-gyp)
+
+- Config: `binding.gyp`
+- Uses N-API via `node-addon-api` (ABI-stable across Node.js versions)
+- macOS/arm64 only
+- Build: `pnpm build:native`
+
+### TypeScript (tsup)
+
+- Config: `tsup.config.ts`
+- Outputs: ESM (`.js`), CJS (`.cjs`), Type declarations (`.d.ts`)
+- Entry points: `src/index.ts`, `src/cli.ts`
+- Build: `pnpm build:ts`
+
+### Full Build
+
+- `pnpm build` – Builds native addon + TypeScript
+
+## CI/CD (GitHub Actions)
+
+- `.github/workflows/ci.yml` – Lint, test, build on every push/PR
+- `.github/workflows/e2e.yml` – E2E tests (manual trigger or on release)
+- Dependabot configured for pnpm and GitHub Actions updates
+
+## npm Package
+
+- Only includes `dist/` and `build/Release/*.node`
+- No source files in published package
+- Platform restricted: macOS arm64 (`os: ["darwin"]`, `cpu: ["arm64"]`)
+
+## Project Structure
+
+```
+src/
+  index.ts      # Main library entry point
+  cli.ts        # CLI tool (parakeet-coreml command)
+  download.ts   # Model download logic
+  *.mm, *.h     # Native Objective-C++ addon sources
+test/
+  *.test.ts     # Test files
+dist/           # Built TypeScript output
+build/          # Built native addon
+```
+
