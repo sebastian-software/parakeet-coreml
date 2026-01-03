@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.1](https://github.com/sebastian-software/parakeet-coreml/compare/v2.0.0...v2.0.1) (2026-01-03)
+
+### Bug Fixes
+
+- **ci:** use CJS CLI for model download ([1090844](https://github.com/sebastian-software/parakeet-coreml/commit/1090844c33e11a31633a6acbb6178bf6dc8d6c15))
+
 # [2.0.0](https://github.com/sebastian-software/parakeet-coreml/compare/v1.0.1...v2.0.0) (2026-01-03)
 
 - refactor!: unify API - transcribe() handles any audio length ([d7ebd6c](https://github.com/sebastian-software/parakeet-coreml/commit/d7ebd6c87266aa77b89a157b6cdcc9f663c492e4))

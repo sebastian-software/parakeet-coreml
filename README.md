@@ -50,16 +50,36 @@ parakeet-coreml is a **native Node.js addon** that directly interfaces with Core
 
 ## Performance
 
-The Apple Neural Engine transforms speech recognition performance. While CPU-based solutions struggle to keep up with real-time audio, ANE acceleration delivers:
+The Apple Neural Engine delivers exceptional speech recognition performance:
 
-| Chip | Speed           | 1 Hour Audio In |
-| ---- | --------------- | --------------- |
-| M4   | ~100x real-time | ~36 seconds     |
-| M3   | ~80x real-time  | ~45 seconds     |
-| M2   | ~70x real-time  | ~51 seconds     |
-| M1   | ~50x real-time  | ~72 seconds     |
+**Measured: M1 Ultra**
 
-All measurements with [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) – NVIDIA's state-of-the-art Transducer-based ASR achieving near-human accuracy. Pro/Max/Ultra variants may perform better due to additional Neural Engine cores.
+```
+5 minutes of audio → 7.7 seconds
+Speed: 40x real-time
+1 hour of audio in ~90 seconds
+```
+
+Run your own benchmark:
+
+```bash
+git clone https://github.com/sebastian-software/parakeet-coreml
+cd parakeet-coreml && pnpm install && pnpm benchmark
+```
+
+### Estimated Performance by Chip
+
+Based on Neural Engine TOPS (tera operations per second):
+
+| Chip     | ANE TOPS | Estimated Speed    |
+| -------- | -------- | ------------------ |
+| M4 Pro   | 38       | ~70x real-time     |
+| M3 Pro   | 18       | ~35x real-time     |
+| M2 Pro   | 15.8     | ~30x real-time     |
+| M1 Ultra | 22       | **40x** (measured) |
+| M1 Pro   | 11       | ~20x real-time     |
+
+Performance scales roughly with Neural Engine compute. Ultra variants have 2x ANE cores. Results may vary based on thermal conditions and system load.
 
 ## Use Cases
 
