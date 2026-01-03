@@ -10,7 +10,7 @@ import { join, resolve } from "node:path"
 import { areModelsDownloaded, downloadModels, getDefaultModelDir } from "./download.js"
 
 // Dynamic require for loading native addon (works in both ESM and CJS)
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const bindingsModule = require("bindings") as (name: string) => unknown
 
 /**
