@@ -18,6 +18,7 @@ ADRs document significant architectural decisions made during development. They 
 | [002](002-napi-bindings.md)        | Use N-API for Node.js Bindings             | Accepted |
 | [003](003-chunk-limit.md)          | 15-Second Audio Chunk Limit                | Accepted |
 | [004](004-model-download.md)       | Automatic Model Download from Hugging Face | Accepted |
+| [005](005-vad-segmentation.md)     | VAD-based Segmentation for Long Audio      | Accepted |
 
 ## Creating New ADRs
 

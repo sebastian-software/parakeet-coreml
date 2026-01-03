@@ -44,6 +44,7 @@ parakeet-coreml is a **native Node.js addon** that directly interfaces with Core
 - 🍎 **Neural Engine Acceleration** – Runs on Apple's dedicated ML silicon, not CPU
 - 🔒 **Fully Offline** – All processing happens locally. Your audio never leaves your device.
 - 📦 **Zero Runtime Dependencies** – No Python, no subprocess, no external services
+- 🎯 **Smart Voice Detection** – Built-in VAD automatically segments long recordings
 - 🌍 **Multilingual** – English and major European languages (German, French, Spanish, Italian, Portuguese, Dutch, Polish, Russian, Ukrainian, and more)
 - ⬇️ **Automatic Setup** – Models download on first use. Just `npm install` and go.
 
@@ -115,9 +116,34 @@ The engine expects raw audio samples in the following format:
 | Sample Rate | **16,000 Hz** (16 kHz)                        |
 | Channels    | **Mono** (single channel)                     |
 | Format      | **Float32Array** with values between -1.0–1.0 |
-| Duration    | Up to **15 seconds** per call                 |
 
-For longer audio, split into chunks and call `transcribe()` for each segment.
+### Short Audio (≤15 seconds)
+
+Use `transcribe()` for quick, single-call processing:
+
+```typescript
+const result = engine.transcribe(audioSamples, 16000)
+```
+
+### Long Audio (any length)
+
+Use `transcribeLong()` with built-in Voice Activity Detection (VAD) for automatic segmentation:
+
+```typescript
+const engine = new ParakeetAsrEngine({ enableVad: true })
+await engine.initialize()
+
+const result = engine.transcribeLong(longAudioSamples, {
+  threshold: 0.5, // Speech detection sensitivity
+  minSilenceDurationMs: 300, // Pause length to split segments
+  minSpeechDurationMs: 250 // Minimum segment length
+})
+
+console.log(result.text) // Full transcription
+console.log(result.segments) // [{ startTime, endTime, text }, ...]
+```
+
+VAD uses Silero's CoreML model to detect speech boundaries, splitting audio at natural pauses. Each segment is transcribed separately and combined into a single result with timestamps.
 
 ### Converting Audio Files
 
@@ -144,31 +170,46 @@ const samples = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length
 
 ## Model Management
 
-Models are automatically downloaded to `~/.cache/parakeet-coreml/models` on first use.
+Models are automatically downloaded on first use:
+
+- **ASR models** (~1.5GB) → `~/.cache/parakeet-coreml/models`
+- **VAD model** (~1MB) → `~/.cache/parakeet-coreml/vad`
 
 ### CLI Commands
 
 ```bash
-# Pre-download models (useful for CI/deployment)
+# Download ASR models only
 npx parakeet-coreml download
 
-# Check if models are present
+# Download VAD model only
+npx parakeet-coreml download-vad
+
+# Download all models (ASR + VAD)
+npx parakeet-coreml download-all
+
+# Check download status
 npx parakeet-coreml status
 
-# Show cache location
+# Show cache locations
 npx parakeet-coreml path
 
 # Force fresh download
-npx parakeet-coreml download --force
+npx parakeet-coreml download-all --force
 ```
 
 ### Custom Configuration
 
 ```typescript
-// Use a custom model directory
+// Use custom model directories
 const engine = new ParakeetAsrEngine({
   modelDir: "./my-models",
+  vadDir: "./my-vad-model",
   autoDownload: true
+})
+
+// Enable VAD for long audio transcription
+const engine = new ParakeetAsrEngine({
+  enableVad: true // Downloads VAD model if needed
 })
 
 // Disable auto-download (for controlled environments)
@@ -189,20 +230,25 @@ new ParakeetAsrEngine(options?: AsrEngineOptions)
 
 #### Options
 
-| Option         | Type      | Default                           | Description                     |
-| -------------- | --------- | --------------------------------- | ------------------------------- |
-| `modelDir`     | `string`  | `~/.cache/parakeet-coreml/models` | Path to model directory         |
-| `autoDownload` | `boolean` | `true`                            | Auto-download models if missing |
+| Option         | Type      | Default                           | Description                       |
+| -------------- | --------- | --------------------------------- | --------------------------------- |
+| `modelDir`     | `string`  | `~/.cache/parakeet-coreml/models` | Path to ASR model directory       |
+| `vadDir`       | `string`  | `~/.cache/parakeet-coreml/vad`    | Path to VAD model directory       |
+| `autoDownload` | `boolean` | `true`                            | Auto-download models if missing   |
+| `enableVad`    | `boolean` | `false`                           | Enable VAD for long audio support |
 
 #### Methods
 
-| Method                             | Description                          |
-| ---------------------------------- | ------------------------------------ |
-| `initialize()`                     | Load models (downloads if needed)    |
-| `isReady()`                        | Check if engine is initialized       |
-| `transcribe(samples, sampleRate?)` | Transcribe Float32Array audio (≤15s) |
-| `cleanup()`                        | Release native resources             |
-| `getVersion()`                     | Get version information              |
+| Method                              | Description                             |
+| ----------------------------------- | --------------------------------------- |
+| `initialize()`                      | Load models (downloads if needed)       |
+| `initializeVad()`                   | Load VAD model (called auto if enabled) |
+| `isReady()`                         | Check if ASR engine is initialized      |
+| `isVadReady()`                      | Check if VAD engine is initialized      |
+| `transcribe(samples, sampleRate?)`  | Transcribe short audio (≤15s)           |
+| `transcribeLong(samples, options?)` | Transcribe long audio with VAD          |
+| `cleanup()`                         | Release all native resources            |
+| `getVersion()`                      | Get version information                 |
 
 ### `TranscriptionResult`
 
@@ -213,14 +259,43 @@ interface TranscriptionResult {
 }
 ```
 
+### `LongTranscriptionResult`
+
+```typescript
+interface LongTranscriptionResult {
+  text: string // Combined transcription of all segments
+  segments: TranscribedSegment[] // Individual segments with timestamps
+  durationMs: number // Total processing time
+}
+
+interface TranscribedSegment {
+  startTime: number // Segment start in seconds
+  endTime: number // Segment end in seconds
+  text: string // Transcription for this segment
+}
+```
+
+### `VadOptions`
+
+```typescript
+interface VadOptions {
+  threshold?: number // Speech probability threshold (0-1), default: 0.5
+  minSilenceDurationMs?: number // Silence to split segments, default: 300
+  minSpeechDurationMs?: number // Minimum segment length, default: 250
+}
+```
+
 ### Helper Functions
 
-| Function                    | Description                            |
-| --------------------------- | -------------------------------------- |
-| `isAvailable()`             | Check if running on supported platform |
-| `getDefaultModelDir()`      | Get default model cache path           |
-| `areModelsDownloaded(dir?)` | Check if models are present            |
-| `downloadModels(options?)`  | Manually trigger model download        |
+| Function                     | Description                            |
+| ---------------------------- | -------------------------------------- |
+| `isAvailable()`              | Check if running on supported platform |
+| `getDefaultModelDir()`       | Get default ASR model cache path       |
+| `getDefaultVadDir()`         | Get default VAD model cache path       |
+| `areModelsDownloaded(dir?)`  | Check if ASR models are present        |
+| `isVadModelDownloaded(dir?)` | Check if VAD model is present          |
+| `downloadModels(options?)`   | Manually download ASR models           |
+| `downloadVadModel(options?)` | Manually download VAD model            |
 
 ## Architecture
 
@@ -230,7 +305,8 @@ interface TranscriptionResult {
 ├─────────────────────────────────────────────────────────┤
 │                  parakeet-coreml API                    │  TypeScript
 ├─────────────────────────────────────────────────────────┤
-│                    Native Addon                         │  N-API + Objective-C++
+│          ASR Engine          │       VAD Engine         │  N-API + Objective-C++
+│      (Parakeet TDT v3)       │      (Silero VAD)        │
 ├─────────────────────────────────────────────────────────┤
 │                      CoreML                             │  Apple Framework
 ├─────────────────────────────────────────────────────────┤
@@ -238,7 +314,12 @@ interface TranscriptionResult {
 └─────────────────────────────────────────────────────────┘
 ```
 
-The library bridges Node.js directly to Apple's CoreML framework via a native N-API addon written in Objective-C++. This eliminates the overhead of subprocess communication or Python interop, resulting in minimal latency and efficient memory usage.
+The library bridges Node.js directly to Apple's CoreML framework via a native N-API addon written in Objective-C++. Both ASR and VAD models run on the Neural Engine, enabling:
+
+- **Short audio**: Direct transcription with minimal latency
+- **Long audio**: VAD detects speech segments → each segment transcribed → results combined with timestamps
+
+This eliminates the overhead of subprocess communication or Python interop, resulting in minimal latency and efficient memory usage.
 
 ## Contributing
 
@@ -255,7 +336,8 @@ MIT – see [LICENSE](LICENSE) for details.
 ## Credits
 
 - [NVIDIA Parakeet TDT v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) – The underlying ASR model
-- [FluidInference](https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml) – CoreML model conversion
+- [Silero VAD](https://github.com/snakers4/silero-vad) – Voice Activity Detection model
+- [FluidInference](https://huggingface.co/FluidInference) – CoreML model conversions for both Parakeet and Silero VAD
 
 ---
 

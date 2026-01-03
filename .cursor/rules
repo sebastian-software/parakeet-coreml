@@ -75,6 +75,9 @@
 - Config: `binding.gyp`
 - Uses N-API via `node-addon-api` (ABI-stable across Node.js versions)
 - macOS/arm64 only
+- Components:
+  - **ASR Engine** (`asr_engine.mm`): Parakeet TDT transcription
+  - **VAD Engine** (`vad_engine.mm`): Silero VAD speech detection
 - Build: `pnpm build:native`
 
 ### TypeScript (tsup)
@@ -95,5 +98,16 @@
 
 ## npm Package
 
-- Only includes `dist/`
+- Only includes `dist/` and `build/Release/*.node`
 - No source files in published package
+
+## CoreML Models
+
+- **ASR Models** (~1.5GB): Downloaded to `~/.cache/parakeet-coreml/models/`
+- **VAD Model** (~1MB): Downloaded to `~/.cache/parakeet-coreml/vad/`
+- CLI: `npx parakeet-coreml download-all`
+
+## API Overview
+
+- `transcribe()`: Short audio ≤15s
+- `transcribeLong()`: Any length with VAD segmentation (requires `enableVad: true`)
