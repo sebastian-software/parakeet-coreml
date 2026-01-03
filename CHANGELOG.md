@@ -1,5 +1,11 @@
 # Changelog
 
+# [1.0.0](https://github.com/sebastian-software/parakeet-coreml/compare/v0.3.0...v1.0.0) (2026-01-03)
+
+### Bug Fixes
+
+- cleanup ([1597c28](https://github.com/sebastian-software/parakeet-coreml/commit/1597c28a863c57e906a798b9f83229c2097f4267))
+
 # [0.3.0](https://github.com/sebastian-software/parakeet-coreml/compare/v0.2.0...v0.3.0) (2026-01-03)
 
 ### Bug Fixes
