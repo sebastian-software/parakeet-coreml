@@ -1,5 +1,43 @@
 # Changelog
 
+# [2.0.0](https://github.com/sebastian-software/parakeet-coreml/compare/v1.0.1...v2.0.0) (2026-01-03)
+
+- refactor!: unify API - transcribe() handles any audio length ([d7ebd6c](https://github.com/sebastian-software/parakeet-coreml/commit/d7ebd6c87266aa77b89a157b6cdcc9f663c492e4))
+
+### Features
+
+- add benchmark command to CLI ([ee66cc2](https://github.com/sebastian-software/parakeet-coreml/commit/ee66cc2ed524d38a9cc386d5f4b1b592fc1463f1))
+- add VAD support for long audio transcription ([10a0a9e](https://github.com/sebastian-software/parakeet-coreml/commit/10a0a9ef781ee0d6ec9a5c790f81fc90b2765197))
+
+### Performance Improvements
+
+- use 5-minute audio for benchmark ([27a9d56](https://github.com/sebastian-software/parakeet-coreml/commit/27a9d560f2e928575a7f7d93686899b20cc4947a))
+
+### BREAKING CHANGES
+
+- The API has been simplified significantly.
+
+Before:
+
+- transcribe() for short audio (≤15s)
+- transcribeLong() for long audio (required enableVad: true)
+
+After:
+
+- transcribe() works for ANY length (async)
+- VAD is automatically used when audio > 15s
+- VAD model downloaded on-demand
+
+Removed:
+
+- enableVad option
+- transcribeLong() method
+- isVadReady() method
+- initializeVad() public method
+
+The 15-second limit is now purely an implementation detail.
+Users simply call transcribe() and it just works.
+
 ## [1.0.1](https://github.com/sebastian-software/parakeet-coreml/compare/v1.0.0...v1.0.1) (2026-01-03)
 
 ### Bug Fixes
