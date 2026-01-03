@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/sebastian-software/parakeet-coreml/actions/workflows/ci.yml/badge.svg)](https://github.com/sebastian-software/parakeet-coreml/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/parakeet-coreml.svg)](https://www.npmjs.com/package/parakeet-coreml)
+[![npm downloads](https://img.shields.io/npm/dm/parakeet-coreml.svg)](https://www.npmjs.com/package/parakeet-coreml)
+[![codecov](https://codecov.io/gh/sebastian-software/parakeet-coreml/branch/main/graph/badge.svg)](https://codecov.io/gh/sebastian-software/parakeet-coreml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 NVIDIA Parakeet TDT ASR for Node.js with **CoreML/ANE acceleration** on Apple Silicon.
@@ -153,9 +157,17 @@ interface TranscriptionResult {
 └─────────────────┘
 ```
 
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Development setup
+- Code style guidelines
+- Pull request process
+
 ## License
 
-MIT
+MIT - see [LICENSE](LICENSE) for details.
 
 ## Credits
 
