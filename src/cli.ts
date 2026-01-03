@@ -75,9 +75,9 @@ async function runBenchmark(): Promise<void> {
   // Find the benchmark audio file (works from dist/ or when running via npx)
   const __dirname = dirname(fileURLToPath(import.meta.url))
   const possiblePaths = [
-    join(__dirname, "../test/fixtures/brian-30s.wav"), // From dist/
-    join(__dirname, "../../test/fixtures/brian-30s.wav"), // From node_modules
-    join(process.cwd(), "test/fixtures/brian-30s.wav") // From repo root
+    join(__dirname, "../test/fixtures/brian-full.wav"), // From dist/
+    join(__dirname, "../../test/fixtures/brian-full.wav"), // From node_modules
+    join(process.cwd(), "test/fixtures/brian-full.wav") // From repo root
   ]
 
   const audioPath = possiblePaths.find((p) => existsSync(p))
