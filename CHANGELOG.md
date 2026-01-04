@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.2.0](https://github.com/sebastian-software/parakeet-coreml/compare/v2.1.0...v2.2.0) (2026-01-04)
+
+### Features
+
+- export SUPPORTED_LANGUAGES array and SupportedLanguage type ([99daf0f](https://github.com/sebastian-software/parakeet-coreml/commit/99daf0f33cd92a898217e12a4d0f5a6f0225d7c6))
+
 # [2.1.0](https://github.com/sebastian-software/parakeet-coreml/compare/v2.0.2...v2.1.0) (2026-01-03)
 
 ### Features
