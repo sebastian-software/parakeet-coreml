@@ -5,6 +5,44 @@
  */
 
 import { existsSync } from "node:fs"
+
+/**
+ * Supported languages by the Parakeet TDT v3 model.
+ * The model supports English and 24 European languages.
+ */
+export const SUPPORTED_LANGUAGES = [
+  "bg", // Bulgarian
+  "cs", // Czech
+  "da", // Danish
+  "de", // German
+  "el", // Greek
+  "en", // English
+  "es", // Spanish
+  "et", // Estonian
+  "fi", // Finnish
+  "fr", // French
+  "hr", // Croatian
+  "hu", // Hungarian
+  "it", // Italian
+  "lt", // Lithuanian
+  "lv", // Latvian
+  "mt", // Maltese
+  "nl", // Dutch
+  "pl", // Polish
+  "pt", // Portuguese
+  "ro", // Romanian
+  "ru", // Russian
+  "sk", // Slovak
+  "sl", // Slovenian
+  "sv", // Swedish
+  "uk" // Ukrainian
+] as const
+
+/**
+ * Supported language code type.
+ * Union of all language codes supported by the Parakeet model.
+ */
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 import { join, resolve } from "node:path"
 
 import {
