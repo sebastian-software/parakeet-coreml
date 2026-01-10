@@ -23,7 +23,7 @@ jobs:
           cache: "pnpm"
 
       - name: Cache models
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/parakeet-coreml
           key: parakeet-models-v2
